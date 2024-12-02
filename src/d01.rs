@@ -1,12 +1,3 @@
-const TEST_INPUT: &str = "3   4
-4   3
-2   5
-1   3
-3   9
-3   3";
-const TEST_RESULT1: i32 = 11;
-const TEST_RESULT2: i32 = 31;
-
 fn parse_columns(input: &String) -> (Vec<i32>, Vec<i32>) {
     let mut left = Vec::new();
     let mut right = Vec::new();
@@ -45,7 +36,19 @@ pub fn part2(input: &String) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
     use super::*;
+
+    const TEST_INPUT: &str = indoc! {"
+        3   4
+        4   3
+        2   5
+        1   3
+        3   9
+        3   3"
+    };
+    const TEST_RESULT1: i32 = 11;
+    const TEST_RESULT2: i32 = 31;
 
     #[test]
     fn test_part1() {

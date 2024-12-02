@@ -1,12 +1,3 @@
-const TEST_INPUT: &str = "7 6 4 2 1
-1 2 7 8 9
-9 7 6 2 1
-1 3 2 4 5
-8 6 4 4 1
-1 3 6 7 9";
-const TEST_RESULT1: i32 = 2;
-const TEST_RESULT2: i32 = 4;
-
 fn parse(input: &String) -> Vec<Vec<i32>> {
     input
         .lines()
@@ -50,7 +41,19 @@ pub fn part2(input: &String) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
     use super::*;
+    
+    const TEST_INPUT: &str = indoc! {"
+        7 6 4 2 1
+        1 2 7 8 9
+        9 7 6 2 1
+        1 3 2 4 5
+        8 6 4 4 1
+        1 3 6 7 9"
+    };
+    const TEST_RESULT1: i32 = 2;
+    const TEST_RESULT2: i32 = 4;
 
     #[test]
     fn test_part1() {
