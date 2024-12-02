@@ -7,7 +7,7 @@ const TEST_INPUT: &str = "3   4
 const TEST_RESULT1: i32 = 11;
 const TEST_RESULT2: i32 = 31;
 
-fn parse_columns(input: &str) -> (Vec<i32>, Vec<i32>) {
+fn parse_columns(input: &String) -> (Vec<i32>, Vec<i32>) {
     let mut left = Vec::new();
     let mut right = Vec::new();
 
@@ -20,7 +20,7 @@ fn parse_columns(input: &str) -> (Vec<i32>, Vec<i32>) {
     (left, right)
 }
 
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &String) -> i32 {
     let (mut left, mut right) = parse_columns(input);
 
     // sort the vectors
@@ -31,7 +31,7 @@ pub fn part1(input: &str) -> i32 {
     left.into_iter().zip(right.into_iter()).map(|(l, r)| (r - l).abs()).sum()
 }
 
-pub fn part2(input: &str) -> i32 {
+pub fn part2(input: &String) -> i32 {
     let (left, right) = parse_columns(input);
 
     // for each number of left, count how many times it appears in right, multiply and sum
@@ -49,11 +49,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(TEST_INPUT), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
     }
 }
