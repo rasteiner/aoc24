@@ -1,5 +1,4 @@
-use core::fmt;
-use std::{fmt::Display, fs, time::Instant};
+use std::{fmt, fs, fmt::Display, time::Instant};
 
 mod d01;
 mod d02;
