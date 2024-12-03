@@ -1,4 +1,4 @@
-use std::{fmt, fs, fmt::Display, time::Instant};
+use std::{fmt::{self, Display}, fs, sync::LazyLock, time::Instant};
 
 mod d01;
 mod d02;
@@ -19,21 +19,24 @@ impl Display for Day {
     }
 }
 
-const DAYS: [(Part, Part); 3] = [
-    (d01::part1, d01::part2),
-    (d02::part1, d02::part2),
-    (d03::part1, d03::part2),
-];
+static DAYS: LazyLock<Vec<Day>> = LazyLock::new(|| {
+    let parts: Vec<(Part, Part)> = vec![
+        (d01::part1, d01::part2),
+        (d02::part1, d02::part2),
+        (d03::part1, d03::part2),
+    ];
+
+    parts.into_iter().enumerate().map(|(i, (part1, part2))| Day { 
+        num: i + 1,
+        part1,
+        part2,
+    }).collect()
+});
 
 fn main() {
-    let options = DAYS.into_iter().enumerate().map(|(i, (part1, part2))| Day { 
-        num: i + 1,
-        part1: part1,
-        part2: part2,
-    }).collect::<Vec<Day>>();
 
     loop {
-        let day = inquire::Select::new("Choose the day to run", options.clone()).prompt();
+        let day = inquire::Select::new("Choose the day to run", DAYS.clone()).prompt();
         if day.is_err() {
             println!("\nExiting...\n");
             break;

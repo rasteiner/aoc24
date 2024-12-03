@@ -3,10 +3,9 @@ use std::sync::LazyLock;
 static MULREG: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap());
 
 pub fn part1(input: &String) -> i32 {
-    let r = &*MULREG;
     let mut sum = 0;
 
-    for (_, [a, b]) in r.captures_iter(&input).map(|c| c.extract()) {
+    for (_, [a, b]) in MULREG.captures_iter(&input).map(|c| c.extract()) {
         let a = a.parse::<i32>().unwrap();
         let b = b.parse::<i32>().unwrap();
         sum += a * b;
