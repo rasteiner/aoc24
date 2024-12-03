@@ -2,6 +2,7 @@ use std::{fmt, fs, fmt::Display, time::Instant};
 
 mod d01;
 mod d02;
+mod d03;
 
 type Part = fn(&String) -> i32;
 
@@ -18,9 +19,10 @@ impl Display for Day {
     }
 }
 
-const DAYS: [(Part, Part); 2] = [
+const DAYS: [(Part, Part); 3] = [
     (d01::part1, d01::part2),
     (d02::part1, d02::part2),
+    (d03::part1, d03::part2),
 ];
 
 fn main() {

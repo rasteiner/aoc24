@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 indoc = "2.0.5"
 inquire = "0.7.5"
+regex = "1.11.1"
