@@ -1,21 +1,35 @@
-use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
 
-#[derive(Debug)]
-struct Rule {
-    before: HashSet<i32>,
+struct Input {
+    rules: Rules,
+    manuals: Manuals,
 }
+
+type Manuals = Vec<Manual>;
 
 #[derive(Debug)]
 struct Manual {
-    pages: Vec<i32>,
+    pages: Vec<usize>,
+}
+
+struct Rules {
+    map: Vec<Vec<usize>>,
+}
+
+struct RuleDef(usize, usize);
+
+impl Rules {
+    fn get(&self, key: usize) -> Option<&Vec<usize>> {
+        self.map.get(key)
+    }
 }
 
 impl Manual {
-    fn is_valid(&self, rules: &HashMap<i32,Rule>) -> bool {
+    fn is_valid(&self, rules: &Rules) -> bool {
         for i in 1..self.pages.len() {
             let current = self.pages[i];
-            if let Some(rule) = rules.get(&current) {
-                for before in &rule.before {
+            if let Some(rule) = rules.get(current) {
+                for before in rule {
                     if self.pages.iter().take(i).any(|&p| p == *before) {
                         return false;
                     }
@@ -25,34 +39,101 @@ impl Manual {
         true
     }
 
-    fn sort(&self, rules: &HashMap<i32,Rule>) -> Manual {
-        let mut pages = self.pages.clone();
-        
-        pages.sort_by(|a, b| {
-            if let Some(rule) = rules.get(a) {
-                if rule.before.contains(b) {
+    fn sort(mut self, rules: &Rules) -> Manual {
+        self.pages.sort_by(|a, b| {
+            if let Some(rule) = rules.get(*a) {
+                if rule.contains(b) {
                     return std::cmp::Ordering::Less;
                 }
             }
-            if let Some(rule) = rules.get(b) {
-                if rule.before.contains(a) {
+            if let Some(rule) = rules.get(*b) {
+                if rule.contains(a) {
                     return std::cmp::Ordering::Greater;
                 }
             }
             std::cmp::Ordering::Equal
         });
 
-        Manual { pages }
+        self
     }
 
-    fn middle(&self) -> i32 {
+    fn middle(&self) -> usize {
         self.pages[self.pages.len() / 2]
     }
 }
 
-impl Rule {
-    fn add_page(&mut self, page: i32) {
-        self.before.insert(page);
+impl FromStr for RuleDef {
+    type Err = ParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        input
+            .split_once("|").ok_or(parse_error(input))
+            .and_then(|(a, b)| {
+                let a: usize = a.parse().map_err(|_| number_parse_error(input, a))?;
+                let b: usize = b.parse().map_err(|_| number_parse_error(input, b))?;
+                Ok(RuleDef(a, b))
+            })
+    }
+}
+
+impl FromStr for Rules {
+    type Err = ParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let rules = input
+            .lines()
+            .map(|line| line.parse())
+            .try_fold(Vec::new(), |mut map: Vec<Vec<usize>>, rule| {
+                let rule: RuleDef = rule?;
+                match map.get_mut(rule.0) {
+                    Some(vec) => vec.push(rule.1),
+                    None => {
+                        if map.len() <= rule.0 {
+                            map.resize(rule.0 + 1, Vec::new());
+                        }
+                        map[rule.0] = vec![rule.1];
+                    } 
+                }
+                Ok(map)
+            })?;
+            
+        Ok(Rules { map: rules })
+    }
+}
+
+impl FromStr for Manual {
+    type Err = ParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let pages  = input
+            .split(',')
+            .map(|n| n.parse::<usize>())
+            .collect::<Result<Vec<usize>, _>>()
+            .map_err(|_| parse_error(input))?;
+
+        Ok(Manual { pages })
+    }
+}
+
+impl FromStr for Input {
+    type Err = ParseError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let split = input
+            .split_once("\n\n")
+            .or_else(|| input.split_once("\r\n\r\n"));
+
+        if let Some((rulestr, manualstr)) = split {
+            let rules = rulestr.parse()?;
+    
+            let manuals = manualstr
+                .lines()
+                .map(|line| line.parse())
+                .collect::<Result<Manuals,_>>()?;
+    
+            return Ok(Input {rules, manuals});
+        } else {
+            return Err(ParseError { message: String::from("Error parsing input") });
+        }
     }
 }
 
@@ -60,47 +141,16 @@ struct ParseError {
     message: String,
 }
 
-fn parse(input: &String) -> Result<(HashMap<i32,Rule>, Vec<Manual>), ParseError> {
-    let mut rules = HashMap::new();
-    let mut manuals = Vec::new();
-
-    // split input by double newline
-    if let Some((rulestr, manualstr)) = input.split_once("\n\n").or(input.split_once("\r\n\r\n")) {
-        // parse rules
-        for line in rulestr.lines() {
-            if let Some((page, before)) = line.split_once("|").and_then(|(a,b)| {
-                Some((a.parse::<i32>().ok()?, b.parse::<i32>().ok()?)) 
-            }) {
-                let rule = rules.entry(page).or_insert(Rule {
-                    before: HashSet::new(),
-                });
-                rule.add_page(before);
-            } else {
-                return Err(ParseError { message: format!("Error parsing rule: {}", line) });
-            }
-        }
-
-        // parse manuals
-        for line in manualstr.lines() {
-            let pages: Vec<i32> = line.split(",").filter_map(|n| n.parse::<i32>().ok()).collect();
-            manuals.push(Manual { pages });
-        }
-        return Ok((rules, manuals));
-
-    } else {
-        return Err(ParseError { message: String::from("Error parsing input") });
-    }
-    
-}
-
 pub fn part1(input: &String) -> i32 {
-    match parse(input) {
-        Ok((rules, manuals)) =>
-            manuals
-                .iter()
-                .filter(|m| m.is_valid(&rules))
-                .map(Manual::middle)
-                .sum(),
+    match input.parse::<Input>() {
+        Ok(input) => 
+            input.manuals
+                .into_iter()
+                .filter(|m| m.is_valid(&input.rules))
+                .map(|m| m.middle())
+                .sum::<usize>()
+                .try_into()
+                .expect("Sum is too large for i32"),
 
         Err(e) => {
             eprintln!("{}", e.message);
@@ -110,19 +160,29 @@ pub fn part1(input: &String) -> i32 {
 }
 
 pub fn part2(input: &String) -> i32 {
-    match parse(input) {
-        Ok((rules, manuals)) => 
-            manuals
-                .iter()
-                .filter(|m| !m.is_valid(&rules))
-                .map(|m| m.sort(&rules).middle())
-                .sum(),
+    match input.parse::<Input>() {
+        Ok(input) => 
+            input.manuals
+                .into_iter()
+                .filter(|m| !m.is_valid(&input.rules))
+                .map(|m| m.sort(&input.rules).middle())
+                .sum::<usize>()
+                .try_into()
+                .expect("Sum is too large for i32"),
 
         Err(e) => {
             eprintln!("{}", e.message);
             0
         }
     }
+}
+
+fn parse_error(input: &str) -> ParseError {
+    ParseError { message: format!("Error parsing [{}]", input) }
+}
+
+fn number_parse_error(input: &str, nan: &str) -> ParseError {
+    ParseError { message: format!("Error parsing [{}], {} is not a number", input, nan) }
 }
 
 #[cfg(test)]
