@@ -24,6 +24,12 @@ impl Rules {
     }
 }
 
+impl Default for Rules {
+    fn default() -> Self {
+        Rules { map: Vec::with_capacity(100) }
+    }
+}
+
 impl Manual {
     fn is_valid(&self, rules: &Rules) -> bool {
         for i in 1..self.pages.len() {
@@ -83,21 +89,21 @@ impl FromStr for Rules {
         let rules = input
             .lines()
             .map(|line| line.parse())
-            .try_fold(Vec::new(), |mut map: Vec<Vec<usize>>, rule| {
+            .try_fold(Rules::default(), |mut rules, rule| {
                 let rule: RuleDef = rule?;
-                match map.get_mut(rule.0) {
+                match rules.map.get_mut(rule.0) {
                     Some(vec) => vec.push(rule.1),
                     None => {
-                        if map.len() <= rule.0 {
-                            map.resize(rule.0 + 1, Vec::new());
+                        if rules.map.len() <= rule.0 {
+                            rules.map.resize(rule.0 + 1, Vec::new());
                         }
-                        map[rule.0] = vec![rule.1];
+                        rules.map[rule.0] = vec![rule.1];
                     } 
                 }
-                Ok(map)
+                Ok(rules)
             })?;
             
-        Ok(Rules { map: rules })
+        Ok(rules)
     }
 }
 
