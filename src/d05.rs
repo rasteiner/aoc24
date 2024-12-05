@@ -56,7 +56,11 @@ impl Rule {
     }
 }
 
-fn parse(input: &String) -> (HashMap<i32,Rule>, Vec<Manual>) {
+struct ParseError {
+    message: String,
+}
+
+fn parse(input: &String) -> Result<(HashMap<i32,Rule>, Vec<Manual>), ParseError> {
     let mut rules = HashMap::new();
     let mut manuals = Vec::new();
 
@@ -72,7 +76,7 @@ fn parse(input: &String) -> (HashMap<i32,Rule>, Vec<Manual>) {
                 });
                 rule.add_page(before);
             } else {
-                eprintln!("Error parsing rule: {}", line);
+                return Err(ParseError { message: format!("Error parsing rule: {}", line) });
             }
         }
 
@@ -81,29 +85,44 @@ fn parse(input: &String) -> (HashMap<i32,Rule>, Vec<Manual>) {
             let pages: Vec<i32> = line.split(",").filter_map(|n| n.parse::<i32>().ok()).collect();
             manuals.push(Manual { pages });
         }
+        return Ok((rules, manuals));
+
     } else {
-        eprintln!("Error parsing input");
+        return Err(ParseError { message: String::from("Error parsing input") });
     }
     
-    (rules, manuals)
 }
 
 pub fn part1(input: &String) -> i32 {
-    let (rules, manuals) = parse(input);
-    manuals
-        .iter()
-        .filter(|m| m.is_valid(&rules))
-        .map(Manual::middle)
-        .sum()
+    match parse(input) {
+        Ok((rules, manuals)) =>
+            manuals
+                .iter()
+                .filter(|m| m.is_valid(&rules))
+                .map(Manual::middle)
+                .sum(),
+
+        Err(e) => {
+            eprintln!("{}", e.message);
+            0
+        }
+    }
 }
 
 pub fn part2(input: &String) -> i32 {
-    let (rules, manuals) = parse(input);
-    manuals
-        .iter()
-        .filter(|m| !m.is_valid(&rules))
-        .map(|m| m.sort(&rules).middle())
-        .sum()
+    match parse(input) {
+        Ok((rules, manuals)) => 
+            manuals
+                .iter()
+                .filter(|m| !m.is_valid(&rules))
+                .map(|m| m.sort(&rules).middle())
+                .sum(),
+
+        Err(e) => {
+            eprintln!("{}", e.message);
+            0
+        }
+    }
 }
 
 #[cfg(test)]
