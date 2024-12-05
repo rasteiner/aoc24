@@ -1,17 +1,19 @@
 fn parse(input: &String) -> Vec<Vec<i32>> {
     input
         .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| 
-            line.split_whitespace().map(|n| n.parse::<i32>())
-                .filter_map(Result::ok)
-                .collect()
+        .map(|line| line
+            .split_whitespace()
+            .filter_map(|n| n.parse().ok())
+            .collect()
         ).collect()
 }
 
-fn check (report: &Vec<i32>) -> bool {
+fn check(report: &Vec<i32>) -> bool {
     let sign = (report[1] - report[0]).signum();
-    report.windows(2).all(|window| (window[1] - window[0]).signum() == sign && (window[1] - window[0]).abs() <= 3)
+    report
+        .windows(2)
+        .map(|window| window[1] - window[0])
+        .all(|diff| diff.signum() == sign && diff.abs() <= 3)
 }
 
 pub fn part1(input: &String) -> i32 {
@@ -26,16 +28,11 @@ pub fn part2(input: &String) -> i32 {
             return true;
         }
 
-        // remove one element at a time and check if the report is valid
-        for i in 0..report.len() {
+        (0..report.len()).any(|i| {
             let mut report = report.clone();
             report.remove(i);
-            if check(&report) {
-                return true;
-            }
-        }
-        
-        return false;
+            check(&report)
+        })
     }).count() as i32
 }
 
