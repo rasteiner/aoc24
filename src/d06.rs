@@ -1,5 +1,6 @@
-use std::{collections::HashSet, str::FromStr};
+use std::{collections::HashSet, str::FromStr, sync::{Arc, Mutex}, thread::spawn};
 
+#[derive(Clone)]
 struct World {
     map: Vec<Space>,
     width: usize,
@@ -119,7 +120,7 @@ impl Direction {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Guard {
     x: i32,
     y: i32,
@@ -190,9 +191,7 @@ pub fn part1(input: &String) -> i32 {
         }
     }
 
-    let unique_coords: HashSet<(i32, i32)> = w.guard.path.into_iter().map(|step| {
-        let x = (step.0, step.1); x
-    }).collect();
+    let unique_coords: HashSet<(i32, i32)> = w.guard.path.into_iter().map(|step| (step.0, step.1)).collect();
     unique_coords.len() as i32
 }
 
@@ -217,41 +216,52 @@ pub fn part2(input: &String) -> i32 {
         }
     }
 
-    let unique_coords: HashSet<(i32, i32)> = w.guard.path.iter().map(|step| {
-        let x = (step.0, step.1); x
-    }).collect();
+    let unique_coords: HashSet<(i32, i32)> = w.guard.path.iter().map(|step| (step.0, step.1)).collect();
     
-    let mut loop_count = 0;
+    let loop_count = Arc::new(Mutex::new(0));
+
+    let mut handles = vec![];
 
     for pos in unique_coords {
-        if original_guard.x == pos.0 && original_guard.y == pos.0 {
+        if original_guard.x == pos.0 && original_guard.y == pos.1 {
             continue;
         }
 
-        w.set(pos, Space::Obstacle).unwrap();
+        let mut world = w.clone();
+        world.guard = original_guard.clone();
+        let loop_count = Arc::clone(&loop_count);
 
-        loop {
-            if let Ok(s) = w.get(w.guard.next_pos()) {
-                match s {
-                    Space::Empty => {
-                        if w.guard.move_forward().is_err() {
-                            loop_count += 1;
-                            break;
+        let handle = spawn(move || {
+            world.set(pos, Space::Obstacle).unwrap();
+
+            loop {
+                if let Ok(s) = world.get(world.guard.next_pos()) {
+                    match s {
+                        Space::Empty => {
+                            if world.guard.move_forward().is_err() {
+                                let mut count = loop_count.lock().unwrap();
+                                *count += 1;
+                                break;
+                            }
+                        },
+                        Space::Obstacle => {
+                            world.guard.turn_right();
                         }
-                    },
-                    Space::Obstacle => {
-                        w.guard.turn_right();
                     }
+                } else {
+                    break;
                 }
-            } else {
-                break;
             }
-        }
+        });
 
-        // reset guard and world
-        w.set(pos, Space::Empty).unwrap();
-        w.guard = original_guard.clone();
+        handles.push(handle);
     }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let loop_count = Arc::try_unwrap(loop_count).unwrap().into_inner().unwrap();
 
     loop_count
 }
