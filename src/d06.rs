@@ -1,12 +1,10 @@
-use std::{collections::HashSet, str::FromStr, sync::BarrierWaitResult, thread::sleep, time::Duration};
+use std::{collections::HashSet, str::FromStr};
 
 struct World {
     map: Vec<Space>,
     width: usize,
     height: usize,
     guard: Guard,
-
-    extra_obstacle: Option<(i32,i32)>
 }
 
 impl FromStr for World {
@@ -39,7 +37,7 @@ impl FromStr for World {
             return Err("No guard found".to_string());
         }
 
-        Ok(Self { map, width, height, guard: guard.unwrap(), extra_obstacle: None })
+        Ok(Self { map, width, height, guard: guard.unwrap() })
     }
 }
 
@@ -56,49 +54,32 @@ impl World {
             return Err(WorldError::OutOfBounds);
         }
         
-        if let Some((ex, ey)) = self.extra_obstacle {
-            let ex = ex as usize;
-            let ey = ey as usize;
-
-            if x == ex && y == ey {
-                return Ok(&Space::Obstacle);
-            }
-        }
-
         let i: usize = y * self.width + x;
 
         Ok(&self.map[i])
     }
 
-    fn move_extra_obstacle(&mut self) -> Result<(), WorldError> {
-        if let Some(o) = self.extra_obstacle {
-            let current = self.width * o.1 as usize + o.0 as usize;
-            let guard_i = self.width * self.guard.y as usize + self.guard.x as usize;
-
-            if let Some(next) = self.map[current+1..].iter().enumerate().find_map(|(i, s)| {
-                if *s == Space::Empty && current + 1 + i != guard_i {
-                    Some(i)
-                } else {
-                    None
-                }
-            }) {
-                let next = next + current + 1;
-                let x = next % self.width;
-                let y = next / self.width;
-
-                self.extra_obstacle = Some((x as i32, y as i32));
-                return Ok(());
-            } else {
-                return Err(WorldError::OutOfBounds);
-            }            
-        } else {
-            self.extra_obstacle = Some((0,0));
-            Ok(())
+    fn set(&mut self, (x, y): (i32, i32), s: Space) -> Result<(), WorldError> {
+        if x < 0 || y < 0 {
+            return Err(WorldError::OutOfBounds);
         }
+        
+        let x = x as usize;
+        let y = y as usize;
+
+        if x >= self.width || y >= self.height {
+            return Err(WorldError::OutOfBounds);
+        }
+
+        let i: usize = y * self.width + x;
+
+        self.map[i] = s;
+
+        Ok(())
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 enum Space {
     Empty,
     Obstacle
@@ -146,6 +127,7 @@ struct Guard {
     path: HashSet<(i32, i32, Direction)>,
 }
 
+#[derive(Debug)]
 enum WorldError {
     OutOfBounds,
     LoopDetected,
@@ -205,7 +187,6 @@ pub fn part1(input: &String) -> i32 {
             Space::Obstacle => {
                 w.guard.turn_right();
             },
-            _ => {},
         }
     }
 
@@ -220,23 +201,34 @@ pub fn part2(input: &String) -> i32 {
         eprintln!("{}", e);
         Err(0)
     }).unwrap();
-
     
     let original_guard = w.guard.clone();
+
+    while let Ok(s) = w.get(w.guard.next_pos()) {
+        match s {
+            Space::Empty => {
+                if w.guard.move_forward().is_err() {
+                    panic!("Loop detected");
+                }
+            },
+            Space::Obstacle => {
+                w.guard.turn_right();
+            },
+        }
+    }
+
+    let unique_coords: HashSet<(i32, i32)> = w.guard.path.iter().map(|step| {
+        let x = (step.0, step.1); x
+    }).collect();
     
     let mut loop_count = 0;
 
-    loop {
-        match w.move_extra_obstacle() {
-            Ok(_) => {
-            },
-            Err(WorldError::OutOfBounds) => {
-                break;
-            },
-            Err(_) => {
-                panic!("Unexpected error");
-            },
+    for pos in unique_coords {
+        if original_guard.x == pos.0 && original_guard.y == pos.0 {
+            continue;
         }
+
+        w.set(pos, Space::Obstacle).unwrap();
 
         loop {
             if let Ok(s) = w.get(w.guard.next_pos()) {
@@ -256,7 +248,8 @@ pub fn part2(input: &String) -> i32 {
             }
         }
 
-        // reset guard
+        // reset guard and world
+        w.set(pos, Space::Empty).unwrap();
         w.guard = original_guard.clone();
     }
 
