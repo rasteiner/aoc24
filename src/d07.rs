@@ -1,6 +1,14 @@
-use std::thread::spawn;
+use rayon::prelude::*;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread::spawn;
 
+#[derive(Clone, Copy)]
+enum Op {
+    Add,
+    Mul,
+    Concat,
+}
 
 pub fn part1(input: &String) -> i64 {
     let mut sum = 0;
@@ -9,13 +17,13 @@ pub fn part1(input: &String) -> i64 {
         let (left, right) = line.split_once(":").unwrap();
         let result: usize = left.parse().unwrap();
         let nums: Vec<usize> = right.split_whitespace().map(|n| n.parse().unwrap()).collect();
-        let num_permutations: usize = 1 << (nums.len() - 1);
+        let num_permutations = 1 << (nums.len() - 1);
 
         'nextOp: for op in 0..num_permutations {
             let mut tmp = nums[0];
 
             for i in 1..nums.len() {
-                if op & (1 << (i-1)) != 0 {
+                if op & (1 << (i - 1)) != 0 {
                     tmp += nums[i];
                 } else {
                     tmp *= nums[i];
@@ -37,101 +45,61 @@ pub fn part1(input: &String) -> i64 {
 }
 
 pub fn part2(input: &String) -> i64 {
-    let sum = Arc::new(Mutex::new(0));
-    
-    #[derive(Clone)]
-    enum Op {
-        Add = 0,
-        Mul = 1,
-        Concat = 2,
-    }
+    let sum = AtomicI64::new(0);
 
-    fn next_perm(ops: &mut Vec<Op>) -> bool {
-        let mut carry = 1;
-        for op in ops.iter_mut().rev() {
-            if carry == 0 {
-                break;
-            }
-            *op = match op {
-                Op::Add => {
-                    carry = 0;
-                    Op::Mul
-                },
-                Op::Mul => {
-                    carry = 0;
-                    Op::Concat
-                },
-                Op::Concat => {
-                    carry = 1;
-                    Op::Add
-                },
-            };
-        }
-        if carry == 1 {
-            false
-        } else {
-            true
-        }
-    }
-    
-
-    let mut handles = vec![];
-
-    for line in input.lines() {
+    input.par_lines().for_each(|line| {
         let (left, right) = line.split_once(":").unwrap();
-        let result: usize = left.parse().unwrap();
-        let nums: Vec<usize> = right.split_whitespace().map(|n| n.parse().unwrap()).collect();
-        let num_ops: usize = nums.len() - 1;
+        let result = left.parse::<usize>().unwrap();
+        let nums: Vec<usize> = right
+            .split_whitespace()
+            .map(|n| n.parse().unwrap())
+            .collect();
+        let num_ops = nums.len() - 1;
+        let total_permutations = 3usize.pow(num_ops as u32);
 
-        let sum = Arc::clone(&sum);
+        for perm in 0..total_permutations {
+            let mut tmp = nums[0];
+            let mut current_perm = perm;
+            let mut valid = true;
 
-        let handle = spawn(move || {
-            let mut ops = vec![Op::Add; num_ops];
-            loop {
-                let mut tmp = nums[0];
-                let mut i = 0;
-                for op in ops.iter() {
-                    i += 1;
-                    match op {
-                        Op::Add => {
-                            tmp += nums[i];
-                        },
-                        Op::Mul => {
-                            tmp *= nums[i];
-                        },
-                        Op::Concat => {
-                            tmp = (format!("{}{}", tmp, nums[i])).parse().unwrap();
-                        },
+            for i in 1..nums.len() {
+                let op = match current_perm % 3 {
+                    0 => Op::Add,
+                    1 => Op::Mul,
+                    2 => Op::Concat,
+                    _ => unreachable!(),
+                };
+                current_perm /= 3;
+
+                match op {
+                    Op::Add => tmp += nums[i],
+                    Op::Mul => tmp *= nums[i],
+                    Op::Concat => {
+                        tmp = format!("{}{}", tmp, nums[i]).parse::<usize>().unwrap_or(0);
                     }
                 }
-    
-                if tmp == result {
-                    let mut sum = sum.lock().unwrap();
-                    *sum += result;
+
+                if tmp > result {
+                    valid = false;
                     break;
                 }
-    
-                if !next_perm(&mut ops) {
-                    return;
-                }
             }
-        });
 
-        handles.push(handle);
+            if valid && tmp == result {
+                sum.fetch_add(result as i64, Ordering::SeqCst);
+                break;
+            }
+        }
+    });
 
-    }
-
-    handles.into_iter().for_each(|h| h.join().unwrap());
-
-    let sum = sum.lock().unwrap();
-    *sum as i64
+    sum.load(Ordering::SeqCst)
 }
 
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
     use super::*;
-    
+
     const TEST_INPUT: &str = indoc! {"
         190: 10 19
         3267: 81 40 27
