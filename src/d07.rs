@@ -1,3 +1,6 @@
+use std::thread::spawn;
+use std::sync::{Arc, Mutex};
+
 
 pub fn part1(input: &String) -> i64 {
     let mut sum = 0;
@@ -34,7 +37,7 @@ pub fn part1(input: &String) -> i64 {
 }
 
 pub fn part2(input: &String) -> i64 {
-    let mut sum = 0;
+    let sum = Arc::new(Mutex::new(0));
     
     #[derive(Clone)]
     enum Op {
@@ -71,43 +74,57 @@ pub fn part2(input: &String) -> i64 {
         }
     }
     
-    'nextLine: for line in input.lines() {
+
+    let mut handles = vec![];
+
+    for line in input.lines() {
         let (left, right) = line.split_once(":").unwrap();
         let result: usize = left.parse().unwrap();
         let nums: Vec<usize> = right.split_whitespace().map(|n| n.parse().unwrap()).collect();
         let num_ops: usize = nums.len() - 1;
 
-        let mut ops = vec![Op::Add; num_ops];
-        loop {
-            let mut tmp = nums[0];
-            let mut i = 0;
-            for op in ops.iter() {
-                i += 1;
-                match op {
-                    Op::Add => {
-                        tmp += nums[i];
-                    },
-                    Op::Mul => {
-                        tmp *= nums[i];
-                    },
-                    Op::Concat => {
-                        tmp = (format!("{}{}", tmp, nums[i])).parse().unwrap();
-                    },
+        let sum = Arc::clone(&sum);
+
+        let handle = spawn(move || {
+            let mut ops = vec![Op::Add; num_ops];
+            loop {
+                let mut tmp = nums[0];
+                let mut i = 0;
+                for op in ops.iter() {
+                    i += 1;
+                    match op {
+                        Op::Add => {
+                            tmp += nums[i];
+                        },
+                        Op::Mul => {
+                            tmp *= nums[i];
+                        },
+                        Op::Concat => {
+                            tmp = (format!("{}{}", tmp, nums[i])).parse().unwrap();
+                        },
+                    }
+                }
+    
+                if tmp == result {
+                    let mut sum = sum.lock().unwrap();
+                    *sum += result;
+                    break;
+                }
+    
+                if !next_perm(&mut ops) {
+                    return;
                 }
             }
+        });
 
-            if tmp == result {
-                sum += result;
-                break;
-            }
+        handles.push(handle);
 
-            if !next_perm(&mut ops) {
-                continue 'nextLine;
-            }
-        }
     }
 
-    sum as i64
+    handles.into_iter().for_each(|h| h.join().unwrap());
+
+    let sum = sum.lock().unwrap();
+    *sum as i64
 }
 
 #[cfg(test)]
