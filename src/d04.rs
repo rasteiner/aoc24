@@ -1,4 +1,4 @@
-pub fn part1(input: &String) -> i32 {
+pub fn part1(input: &String) -> i64 {
     let mut count = 0;
     let matrix = input.lines().map(|line| line.trim().bytes().collect::<Vec<u8>>()).collect::<Vec<Vec<u8>>>();
 
@@ -22,11 +22,11 @@ pub fn part1(input: &String) -> i32 {
             }
 
             'nextDir: for (dx, dy) in directions.iter() {
-                let mut mx = x as i32 + dx;
-                let mut my = y as i32 + dy;
+                let mut mx = x as i64 + dx;
+                let mut my = y as i64 + dy;
 
                 for i in 1..XMAS.len() {
-                    if mx < 0 || my < 0 || my >= matrix.len() as i32 || mx >= matrix[my as usize].len() as i32 {
+                    if mx < 0 || my < 0 || my >= matrix.len() as i64 || mx >= matrix[my as usize].len() as i64 {
                         continue 'nextDir;
                     }
 
@@ -45,7 +45,7 @@ pub fn part1(input: &String) -> i32 {
     count
 }
 
-pub fn part2(input: &String) -> i32 {
+pub fn part2(input: &String) -> i64 {
     let mut count = 0;
     let matrix = input.lines().map(|line| line.trim().bytes().collect::<Vec<u8>>()).collect::<Vec<Vec<u8>>>();
 
@@ -63,8 +63,8 @@ pub fn part2(input: &String) -> i32 {
             }
 
             let vals = corners.iter().map(|(dx, dy)| {
-                let mx = x as i32 + dx;
-                let my = y as i32 + dy;
+                let mx = x as i64 + dx;
+                let my = y as i64 + dy;
                 
                 matrix[my as usize][mx as usize]
             }).collect::<Vec<u8>>();
@@ -95,8 +95,8 @@ mod tests {
         MAMMMXMMMM
         MXMXAXMASX"
     };
-    const TEST_RESULT1: i32 = 18;
-    const TEST_RESULT2: i32 = 9;
+    const TEST_RESULT1: i64 = 18;
+    const TEST_RESULT2: i64 = 9;
 
     #[test]
     fn test_part1() {

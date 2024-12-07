@@ -147,7 +147,7 @@ struct ParseError {
     message: String,
 }
 
-pub fn part1(input: &String) -> i32 {
+pub fn part1(input: &String) -> i64 {
     match input.parse::<Input>() {
         Ok(input) => 
             input.manuals
@@ -156,7 +156,7 @@ pub fn part1(input: &String) -> i32 {
                 .map(|m| m.middle())
                 .sum::<usize>()
                 .try_into()
-                .expect("Sum is too large for i32"),
+                .expect("Sum is too large for i64"),
 
         Err(e) => {
             eprintln!("{}", e.message);
@@ -165,7 +165,7 @@ pub fn part1(input: &String) -> i32 {
     }
 }
 
-pub fn part2(input: &String) -> i32 {
+pub fn part2(input: &String) -> i64 {
     match input.parse::<Input>() {
         Ok(input) => 
             input.manuals
@@ -174,7 +174,7 @@ pub fn part2(input: &String) -> i32 {
                 .map(|m| m.sort(&input.rules).middle())
                 .sum::<usize>()
                 .try_into()
-                .expect("Sum is too large for i32"),
+                .expect("Sum is too large for i64"),
 
         Err(e) => {
             eprintln!("{}", e.message);
@@ -226,8 +226,8 @@ mod tests {
         61,13,29
         97,13,75,29,47"
     };
-    const TEST_RESULT1: i32 = 143;
-    const TEST_RESULT2: i32 = 123;
+    const TEST_RESULT1: i64 = 143;
+    const TEST_RESULT2: i64 = 123;
 
     #[test]
     fn test_part1() {

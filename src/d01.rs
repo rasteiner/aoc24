@@ -1,9 +1,9 @@
-fn parse_columns(input: &String) -> (Vec<i32>, Vec<i32>) {
+fn parse_columns(input: &String) -> (Vec<i64>, Vec<i64>) {
     let mut left = Vec::new();
     let mut right = Vec::new();
 
     for line in input.lines() {
-        let mut nums = line.split_whitespace().map(|n| n.parse::<i32>().unwrap());
+        let mut nums = line.split_whitespace().map(|n| n.parse::<i64>().unwrap());
         left.push(nums.next().unwrap());
         right.push(nums.next().unwrap());
     }
@@ -11,7 +11,7 @@ fn parse_columns(input: &String) -> (Vec<i32>, Vec<i32>) {
     (left, right)
 }
 
-pub fn part1(input: &String) -> i32 {
+pub fn part1(input: &String) -> i64 {
     let (mut left, mut right) = parse_columns(input);
 
     // sort the vectors
@@ -22,13 +22,13 @@ pub fn part1(input: &String) -> i32 {
     left.into_iter().zip(right.into_iter()).map(|(l, r)| (r - l).abs()).sum()
 }
 
-pub fn part2(input: &String) -> i32 {
+pub fn part2(input: &String) -> i64 {
     let (left, right) = parse_columns(input);
 
     // for each number of left, count how many times it appears in right, multiply and sum
     let mut sum = 0;
     for l in left {
-        sum += l * right.iter().filter(|&r| *r == l).count() as i32;
+        sum += l * right.iter().filter(|&r| *r == l).count() as i64;
     }
 
     sum
@@ -47,8 +47,8 @@ mod tests {
         3   9
         3   3"
     };
-    const TEST_RESULT1: i32 = 11;
-    const TEST_RESULT2: i32 = 31;
+    const TEST_RESULT1: i64 = 11;
+    const TEST_RESULT2: i64 = 31;
 
     #[test]
     fn test_part1() {

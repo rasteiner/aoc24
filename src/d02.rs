@@ -1,4 +1,4 @@
-fn parse(input: &String) -> Vec<Vec<i32>> {
+fn parse(input: &String) -> Vec<Vec<i64>> {
     input
         .lines()
         .map(|line| line
@@ -8,7 +8,7 @@ fn parse(input: &String) -> Vec<Vec<i32>> {
         ).collect()
 }
 
-fn check(report: &Vec<i32>) -> bool {
+fn check(report: &Vec<i64>) -> bool {
     let sign = (report[1] - report[0]).signum();
     report
         .windows(2)
@@ -16,12 +16,12 @@ fn check(report: &Vec<i32>) -> bool {
         .all(|diff| diff.signum() == sign && diff.abs() <= 3)
 }
 
-pub fn part1(input: &String) -> i32 {
+pub fn part1(input: &String) -> i64 {
     let reports = parse(input);
-    reports.into_iter().filter(check).count() as i32
+    reports.into_iter().filter(check).count() as i64
 }
 
-pub fn part2(input: &String) -> i32 {
+pub fn part2(input: &String) -> i64 {
     let reports = parse(input);
     reports.into_iter().filter(|report| {
         if check(report) {
@@ -33,7 +33,7 @@ pub fn part2(input: &String) -> i32 {
             report.remove(i);
             check(&report)
         })
-    }).count() as i32
+    }).count() as i64
 }
 
 #[cfg(test)]
@@ -49,8 +49,8 @@ mod tests {
         8 6 4 4 1
         1 3 6 7 9"
     };
-    const TEST_RESULT1: i32 = 2;
-    const TEST_RESULT2: i32 = 4;
+    const TEST_RESULT1: i64 = 2;
+    const TEST_RESULT2: i64 = 4;
 
     #[test]
     fn test_part1() {

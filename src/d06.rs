@@ -43,7 +43,7 @@ impl FromStr for World {
 }
 
 impl World {
-    fn get(&self, (x, y): (i32, i32)) -> Result<&Space, WorldError> {
+    fn get(&self, (x, y): (i64, i64)) -> Result<&Space, WorldError> {
         if x < 0 || y < 0 {
             return Err(WorldError::OutOfBounds);
         }
@@ -60,7 +60,7 @@ impl World {
         Ok(&self.map[i])
     }
 
-    fn set(&mut self, (x, y): (i32, i32), s: Space) -> Result<(), WorldError> {
+    fn set(&mut self, (x, y): (i64, i64), s: Space) -> Result<(), WorldError> {
         if x < 0 || y < 0 {
             return Err(WorldError::OutOfBounds);
         }
@@ -122,10 +122,10 @@ impl Direction {
 
 #[derive(Clone, Debug)]
 struct Guard {
-    x: i32,
-    y: i32,
+    x: i64,
+    y: i64,
     dir: Direction,
-    path: HashSet<(i32, i32, Direction)>,
+    path: HashSet<(i64, i64, Direction)>,
 }
 
 #[derive(Debug)]
@@ -142,7 +142,7 @@ impl Guard {
         Self { x, y, dir: dir.clone(), path: HashSet::from([(x,y,dir)]) }
     }
 
-    fn next_pos(&self) -> (i32, i32) {
+    fn next_pos(&self) -> (i64, i64) {
         match self.dir {
             Direction::Up => (self.x, self.y - 1),
             Direction::Down => (self.x, self.y + 1),
@@ -172,7 +172,7 @@ impl Guard {
     }
 }
 
-pub fn part1(input: &String) -> i32 {
+pub fn part1(input: &String) -> i64 {
     let mut w = World::from_str(input).or_else(|e| {
         eprintln!("{}", e);
         Err(0)
@@ -191,11 +191,11 @@ pub fn part1(input: &String) -> i32 {
         }
     }
 
-    let unique_coords: HashSet<(i32, i32)> = w.guard.path.into_iter().map(|step| (step.0, step.1)).collect();
-    unique_coords.len() as i32
+    let unique_coords: HashSet<(i64, i64)> = w.guard.path.into_iter().map(|step| (step.0, step.1)).collect();
+    unique_coords.len() as i64
 }
 
-pub fn part2(input: &String) -> i32 {
+pub fn part2(input: &String) -> i64 {
     let mut w = World::from_str(input).or_else(|e| {
         eprintln!("{}", e);
         Err(0)
@@ -216,7 +216,7 @@ pub fn part2(input: &String) -> i32 {
         }
     }
 
-    let unique_coords: HashSet<(i32, i32)> = w.guard.path.iter().map(|step| (step.0, step.1)).collect();
+    let unique_coords: HashSet<(i64, i64)> = w.guard.path.iter().map(|step| (step.0, step.1)).collect();
     
     let loop_count = Arc::new(Mutex::new(0));
 
@@ -283,8 +283,8 @@ mod tests {
         #.........
         ......#..."
     };
-    const TEST_RESULT1: i32 = 41;
-    const TEST_RESULT2: i32 = 6;
+    const TEST_RESULT1: i64 = 41;
+    const TEST_RESULT2: i64 = 6;
 
     #[test]
     fn test_part1() {
