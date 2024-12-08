@@ -1,7 +1,5 @@
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Mutex};
-use std::thread::spawn;
 
 #[derive(Clone, Copy)]
 enum Op {
