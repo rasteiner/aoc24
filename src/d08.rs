@@ -99,12 +99,9 @@ pub fn part1(input: &String) -> i64 {
     for pos in index.into_values() {
         for i in 0..pos.len() {
             for j in i+1..pos.len() {
-                let mut a = pos[i];
-                let mut b = pos[j];
-                let d = b - a;
-
-                a -= d;
-                b += d;
+                let d = pos[j] - pos[i];
+                let a = pos[i] - d;
+                let b = pos[j] + d;
 
                 if a.x >= 0 && a.x < w && a.y >= 0 && a.y < h {
                     nodes.insert(a);
