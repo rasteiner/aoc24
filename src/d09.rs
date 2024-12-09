@@ -63,15 +63,15 @@ pub fn part1(input: &String) -> i64 {
     }).count();
 
     let disk_clone = disk.clone();
-    let mut reverse_files = disk_clone.iter().rev().filter(|&x| match x {
+    let mut reverse_files = disk_clone.into_iter().rev().filter(|&x| match x {
         Block::File(_) => true,
         _ => false,
-    }).into_iter();
+    });
     
     for b in disk.into_iter() {
         if b == Block::Space {
             if let Some(f) = reverse_files.next() {
-                fragmented.push(*f);
+                fragmented.push(f);
             } else {
                 break;
             }
