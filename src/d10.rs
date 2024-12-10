@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::atomic::{AtomicUsize, Ordering}};
+
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 type Map = Vec<Vec<u8>>;
 type Coord = (usize, usize);
@@ -99,17 +101,16 @@ pub fn part1(input: &String) -> i64 {
         found
     }
 
-    let mut count = 0;
+    let count = AtomicUsize::new(0);
 
-    starts.iter().for_each(|p| {
+    starts.par_iter().for_each(|p| {
         let mut cache: HashMap<Coord, bool> = HashMap::new();
         find(&map, p, &mut cache);
 
-        count += peaks.iter().filter_map(|p| cache.get(p)).count();
+        count.fetch_add(peaks.iter().filter_map(|p| cache.get(p)).count(), Ordering::SeqCst);
     });
 
-    count as i64
-
+    count.load(Ordering::SeqCst) as i64
 
 }
 
@@ -131,7 +132,6 @@ pub fn part2(input: &String) -> i64 {
         } else {
             found = 1;
         }
-
 
         cache.insert(*coord, found);
         found
