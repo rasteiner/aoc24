@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-type LookupCache = HashMap<(i64,i64),i64>;
+type LookupCache = Vec<HashMap<i64,i64>>;
 
-fn do_rules(stone: i64, depth: i64, cache: &mut LookupCache) -> i64 {
-    if let Some(result) = cache.get(&(stone, depth)) {
+fn do_rules(stone: i64, depth: usize, cache: &mut LookupCache) -> i64 {
+    if let Some(result) = cache[depth].get(&stone) {
         return *result;
     }
     
@@ -24,16 +24,19 @@ fn do_rules(stone: i64, depth: i64, cache: &mut LookupCache) -> i64 {
     };
     
     // store 
-    cache.insert((stone, depth), result);
+    cache[depth].insert(stone, result);
 
     result
 }
 
-fn parse_and_do(input: &String, depth: i64) -> i64 {
+fn parse_and_do(input: &String, depth: usize) -> i64 {
+
+    let mut cache: LookupCache = vec![HashMap::new(); depth as usize + 1];
+
     input
         .split_whitespace()
         .map(|x| x.parse().unwrap())
-        .map(|x| do_rules(x, depth, &mut HashMap::new()))
+        .map(|x| do_rules(x, depth, &mut cache))
         .sum()
 }
 
