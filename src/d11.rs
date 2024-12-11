@@ -1,48 +1,51 @@
 use std::collections::HashMap;
-type LookupCache = HashMap<(i64,i64),i64>;
 
-fn do_rules(stone: i64, depth: i64, cache: &mut LookupCache) -> i64 {
-    if let Some(result) = cache.get(&(stone, depth)) {
-        return *result;
-    }
-    
-    let result = if depth == 0 {
-        1
-    } else if stone == 0 {
-        do_rules(1, depth - 1, cache)
-    } else {
-        let digits = stone.ilog10() + 1;
-        if digits % 2 == 0 {
-            let half = digits / 2;
-            let left = stone / 10_i64.pow(half as u32);
-            let right = stone % 10_i64.pow(half as u32);
-
-            do_rules(left, depth - 1, cache) + do_rules(right, depth - 1, cache)
-        } else {
-            do_rules(stone * 2024, depth - 1, cache)
-        }
-    };
-    
-    // store 
-    cache.insert((stone, depth), result);
-
-    result
+fn set_or_increase(map: &mut HashMap<i64, i64>, key: i64, value: i64) {
+    *map.entry(key).or_insert(0) += value;
 }
 
-fn parse_and_do(input: &String, depth: i64) -> i64 {
-    input
+fn part_keys(input: &str, blinks: u32) -> i64 {
+    let initial: Vec<i64> = input
+        .trim()
         .split_whitespace()
-        .map(|x| x.parse().unwrap())
-        .map(|x| do_rules(x, depth, &mut HashMap::new()))
-        .sum()
+        .map(|s| s.parse().unwrap())
+        .collect();
+
+    let mut n: HashMap<i64, i64> = HashMap::new();
+    for &v in &initial {
+        set_or_increase(&mut n, v, 1);
+    }
+
+    for _ in 0..blinks {
+        let mut n2: HashMap<i64, i64> = HashMap::new();
+        for (&v, &c) in &n {
+            if v == 0 {
+                set_or_increase(&mut n2, 1, c);
+            } else {
+                let digits = v.ilog10() + 1;
+                if digits % 2 == 0 {
+                    let half = digits / 2;
+                    let left = v / 10i64.pow(half as u32);
+                    let right = v % 10i64.pow(half as u32);
+                    
+                    set_or_increase(&mut n2, left, c);
+                    set_or_increase(&mut n2, right, c);
+                } else {
+                    set_or_increase(&mut n2, v * 2024, c);
+                }
+            }
+        }
+        n = n2;
+    }
+    n.values().sum()
 }
 
 pub fn part1(input: &String) -> i64 {
-    parse_and_do(input, 25)
+    part_keys(input, 25)
 }
 
 pub fn part2(input: &String) -> i64 {
-    parse_and_do(input, 75)
+    part_keys(input, 75)
 }
 
 #[cfg(test)]
