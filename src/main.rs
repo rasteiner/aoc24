@@ -11,6 +11,7 @@ mod d08;
 mod d09;
 mod d10;
 mod d11;
+mod d12;
 
 type Part = fn(&String) -> i64;
 
@@ -40,6 +41,7 @@ static DAYS: LazyLock<Vec<Day>> = LazyLock::new(|| {
         (d09::part1, d09::part2),
         (d10::part1, d10::part2),
         (d11::part1, d11::part2),
+        (d12::part1, d12::part2),
     ];
 
     parts.into_iter().enumerate().map(|(i, (part1, part2))| Day { 
