@@ -88,39 +88,49 @@ fn sides(area: &Area) -> i64 {
 
     let mut corners = 0;
     for (x, y) in area {
+        // we use those multiple times, so we hash them only once here
+        let tl = *x > 0 && *y > 0 && area.contains(&(x - 1, y - 1));
+        let t = *y > 0 && area.contains(&(*x, y - 1));
+        let tr = *y > 0 && area.contains(&(x + 1, y - 1));
+        let r = area.contains(&(x + 1, *y));
+        let br = area.contains(&(x + 1, y + 1));
+        let b = area.contains(&(*x, y + 1));
+        let bl = *x > 0 && area.contains(&(x - 1, y + 1));
+        let l = *x > 0 && area.contains(&(x - 1, *y));
+
         // Convex corners
         // bottom right
-        if !area.contains(&(x + 1, *y)) && !area.contains(&(*x, y + 1)) {
+        if !r && !b {
             corners += 1;
         }
         // top right
-        if !area.contains(&(x + 1, *y)) && (*y == 0 || !area.contains(&(*x, y - 1))) {
+        if !r && !t {
             corners += 1;
         }
         // bottom left
-        if (*x == 0 || !area.contains(&(x - 1, *y))) && !area.contains(&(*x, y + 1)) {
+        if !l && !b {
             corners += 1;
         }
         // top left
-        if (*x == 0 || !area.contains(&(x - 1, *y))) && (*y == 0 || !area.contains(&(*x, y - 1))) {
+        if !l && !t {
             corners += 1;
         }
 
         // Concave corners
         // bottom right (there a cell to the right and below, but not to the bottom right)
-        if area.contains(&(x + 1, *y)) && area.contains(&(*x, y + 1)) && !area.contains(&(x + 1, y + 1)) {
+        if r && b && !br {
             corners += 1;
         }
         // top right (there a cell to the right and above, but not to the top right)
-        if area.contains(&(x + 1, *y)) && *y > 0 && area.contains(&(*x, y - 1)) && !area.contains(&(x + 1, y - 1)) {
+        if r && t && !tr {
             corners += 1;
         }
         // bottom left (there a cell to the left and below, but not to the bottom left)
-        if *x > 0 && area.contains(&(x - 1, *y)) && area.contains(&(*x, y + 1)) && !area.contains(&(x - 1, y + 1)) {
+        if l && b && !bl {
             corners += 1;
         }
         // top left (there a cell to the left and above, but not to the top left)
-        if *x > 0 && *y > 0 && area.contains(&(x - 1, *y)) && area.contains(&(*x, y - 1)) && !area.contains(&(x - 1, y - 1)) {
+        if l && t && !tl {
             corners += 1;
         }
     }
