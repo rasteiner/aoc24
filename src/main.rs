@@ -1,19 +1,10 @@
 use std::{fmt::{self, Display}, fs, sync::LazyLock, time::Instant};
 
-mod d01;
-mod d02;
-mod d03;
-mod d04;
-mod d05;
-mod d06;
-mod d07;
-mod d08;
-mod d09;
-mod d10;
-mod d11;
-mod d12;
-
 type Part = fn(&String) -> i64;
+
+#[macro_use]
+mod days;
+days!(d01, d02, d03, d04, d05, d06, d07, d08, d09, d10, d11, d12);
 
 #[derive(Clone)]
 struct Day {
@@ -28,28 +19,6 @@ impl Display for Day {
     }
 }
 
-static DAYS: LazyLock<Vec<Day>> = LazyLock::new(|| {
-    let parts: Vec<(Part, Part)> = vec![
-        (d01::part1, d01::part2),
-        (d02::part1, d02::part2),
-        (d03::part1, d03::part2),
-        (d04::part1, d04::part2),
-        (d05::part1, d05::part2),
-        (d06::part1, d06::part2),
-        (d07::part1, d07::part2),
-        (d08::part1, d08::part2),
-        (d09::part1, d09::part2),
-        (d10::part1, d10::part2),
-        (d11::part1, d11::part2),
-        (d12::part1, d12::part2),
-    ];
-
-    parts.into_iter().enumerate().map(|(i, (part1, part2))| Day { 
-        num: i + 1,
-        part1,
-        part2,
-    }).collect()
-});
 
 fn main() {
 
