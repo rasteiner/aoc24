@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 type Grid = Vec<Vec<char>>;
 type Area = HashSet<(usize, usize)>;
 
@@ -59,27 +61,6 @@ fn perimeter(area: &Area) -> i64 {
     perimeter
 }
 
-#[cfg(test)]
-fn draw_area(grid: &Grid, area: &Area) {
-    let min_x = area.iter().map(|(x, _)| x).min().unwrap();
-    let max_x = area.iter().map(|(x, _)| x).max().unwrap();
-    let min_y = area.iter().map(|(_, y)| y).min().unwrap();
-    let max_y = area.iter().map(|(_, y)| y).max().unwrap();
-    let w = max_x - min_x + 1;
-    let h = max_y - min_y + 1;
-
-    let mut area_grid = vec![vec!['.'; w]; h];
-
-    for (x, y) in area {
-        area_grid[y - min_y][x - min_x] = grid[*y][*x];
-    }
-
-    for row in area_grid {
-        println!("{}", row.iter().collect::<String>());
-    }
-    println!();
-}
-
 pub fn part1(input: &String) -> i64 {
     let grid = make_grid(input);
     let mut areas: Vec<Area> = vec![];
@@ -96,22 +77,9 @@ pub fn part1(input: &String) -> i64 {
         }
     }
 
-    let mut price = 0;
-    for area in &areas {
-
-        #[cfg(test)] 
-        {
-            draw_area(&grid, &area);
-            println!("Perimeter: {}", perimeter(area));
-            println!("Area: {}", area.len());
-            println!("Price: {}", perimeter(area) * area.len() as i64);
-            println!("\n---------\n");
-        }
-        
-        price += perimeter(area) * area.len() as i64;
-    }
-
-    price
+    areas.into_par_iter().map(|a| {
+        perimeter(&a) * a.len() as i64
+    }).sum()
 }
 
 
@@ -175,22 +143,9 @@ pub fn part2(input: &String) -> i64 {
         }
     }
 
-    let mut price = 0;
-    for area in &areas {
-        
-        #[cfg(test)] 
-        {
-            draw_area(&grid, &area);
-            println!("Sides: {}", sides(area));
-            println!("Area: {}", area.len());
-            println!("Price: {}", sides(area) * area.len() as i64);
-            println!("\n---------\n");
-        }
-
-        price += sides(area) * area.len() as i64;
-    }
-
-    price
+    areas.into_par_iter().map(|a| {
+        sides(&a) * a.len() as i64
+    }).sum()
 }
 
 #[cfg(test)]
