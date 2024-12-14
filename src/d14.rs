@@ -112,7 +112,6 @@ fn parse(input: &String) -> Vec<Robot> {
     }).collect()
 }
 
-// Part 1: Count the number of peaks reachable from starting points
 pub fn part1(input: &String) -> i64 {
     let robots = parse(input);
     
@@ -128,7 +127,6 @@ pub fn part1(input: &String) -> i64 {
         .fold(1, |a, b| a * b)
 }
 
-// Part 2: Count the total number of paths from starting points to peaks
 pub fn part2(input: &String) -> i64 {
     let mut robots = parse(input);
     
@@ -140,7 +138,6 @@ pub fn part2(input: &String) -> i64 {
         
         for bot in robots.iter_mut() {
             bot.p = (bot.p + bot.v) % SIZE;
-            //img.put_pixel(bot.p.x as u32, bot.p.y as u32, image::Rgb([255, 255, 255]));
             grid[bot.p.y as usize][bot.p.x as usize] = 1;
             
         }
