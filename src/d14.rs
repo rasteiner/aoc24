@@ -112,22 +112,24 @@ fn parse(input: &String) -> Vec<Robot> {
     }).collect()
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let robots = parse(input);
-    
-    robots
-        .iter()
-        .filter_map(|robot| ((robot.p + (robot.v * 100)) % SIZE).quadrant())
-        .fold(vec![0; 4], |mut acc, x| {
-            // sum the number of bots in each quadrant
-            acc[x] += 1 as i64;
-            acc
-        })
-        .into_iter()
-        .fold(1, |a, b| a * b)
+
+    Box::new(
+        robots
+            .iter()
+            .filter_map(|robot| ((robot.p + (robot.v * 100)) % SIZE).quadrant())
+            .fold(vec![0; 4], |mut acc, x| {
+                // sum the number of bots in each quadrant
+                acc[x] += 1 as i64;
+                acc
+            })
+            .into_iter()
+            .fold(1, |a, b| a * b)
+    )
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let mut robots = parse(input);
     
     //make sure output directory exists
@@ -164,7 +166,8 @@ pub fn part2(input: &String) -> i64 {
                 img.put_pixel(bot.p.x as u32, bot.p.y as u32, image::Rgb([255, 255, 255]));
             }
             img.save(format!("output/d14_{:0>5}.png", i)).unwrap();
-            return i;
+
+            return Box::new(i);
         }
     }
 
@@ -195,6 +198,6 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT.to_string());
     }
 }

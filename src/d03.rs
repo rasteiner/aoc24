@@ -1,8 +1,8 @@
-use std::sync::LazyLock;
+use std::{i64, sync::LazyLock};
 
 static MULREG: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap());
 
-pub fn part1(input: &String) -> i64 {
+fn p1(input: &String) -> i64 {
     let mut sum = 0;
 
     for (_, [a, b]) in MULREG.captures_iter(&input).map(|c| c.extract()) {
@@ -14,15 +14,19 @@ pub fn part1(input: &String) -> i64 {
     sum
 }
 
-pub fn part2(input: &String) -> i64 {
-    let mut sum = 0;
+pub fn part1(input: &String) -> Box<dyn ToString> {
+    Box::new(p1(input))
+}
+
+pub fn part2(input: &String) -> Box<dyn ToString> {
+    let mut sum: i64 = 0;
     
     for chunk in input.split("do()") {
         let before_dont = chunk.split("don't()").next().unwrap();
-        sum += part1(&String::from(before_dont));
+        sum += p1(&String::from(before_dont));
     }
 
-    sum
+    Box::new(sum)
 }
 
 #[cfg(test)]
@@ -36,11 +40,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT2)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT2)).to_string(), TEST_RESULT2.to_string());
     }
 }

@@ -147,40 +147,44 @@ struct ParseError {
     message: String,
 }
 
-pub fn part1(input: &String) -> i64 {
-    match input.parse::<Input>() {
-        Ok(input) => 
-            input.manuals
-                .into_iter()
-                .filter(|m| m.is_valid(&input.rules))
-                .map(|m| m.middle())
-                .sum::<usize>()
-                .try_into()
-                .expect("Sum is too large for i64"),
-
-        Err(e) => {
-            eprintln!("{}", e.message);
-            0
+pub fn part1(input: &String) -> Box<dyn ToString> {
+    Box::new(
+        match input.parse::<Input>() {
+            Ok(input) => 
+                input.manuals
+                    .into_iter()
+                    .filter(|m| m.is_valid(&input.rules))
+                    .map(|m| m.middle())
+                    .sum::<usize>()
+                    .try_into()
+                    .expect("Sum is too large for i64"),
+    
+            Err(e) => {
+                eprintln!("{}", e.message);
+                0
+            }
         }
-    }
+    )
 }
 
-pub fn part2(input: &String) -> i64 {
-    match input.parse::<Input>() {
-        Ok(input) => 
-            input.manuals
-                .into_iter()
-                .filter(|m| !m.is_valid(&input.rules))
-                .map(|m| m.sort(&input.rules).middle())
-                .sum::<usize>()
-                .try_into()
-                .expect("Sum is too large for i64"),
-
-        Err(e) => {
-            eprintln!("{}", e.message);
-            0
+pub fn part2(input: &String) -> Box<dyn ToString> {
+    Box::new(
+        match input.parse::<Input>() {
+            Ok(input) => 
+                input.manuals
+                    .into_iter()
+                    .filter(|m| !m.is_valid(&input.rules))
+                    .map(|m| m.sort(&input.rules).middle())
+                    .sum::<usize>()
+                    .try_into()
+                    .expect("Sum is too large for i64"),
+    
+            Err(e) => {
+                eprintln!("{}", e.message);
+                0
+            }
         }
-    }
+    )
 }
 
 fn parse_error(input: &str) -> ParseError {
@@ -231,11 +235,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

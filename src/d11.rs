@@ -40,12 +40,12 @@ fn parse_and_do(input: &String, depth: usize) -> i64 {
         .sum()
 }
 
-pub fn part1(input: &String) -> i64 {
-    parse_and_do(input, 25)
+pub fn part1(input: &String) -> Box<dyn ToString> {
+    Box::new(parse_and_do(input, 25))
 }
 
-pub fn part2(input: &String) -> i64 {
-    parse_and_do(input, 75)
+pub fn part2(input: &String) -> Box<dyn ToString> {
+    Box::new(parse_and_do(input, 75))
 }
 
 #[cfg(test)]
@@ -57,6 +57,6 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT.to_string());
     }
 }

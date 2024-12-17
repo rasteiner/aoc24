@@ -123,25 +123,29 @@ fn solve_with_math(puzzle: Puzzle, larger: bool) -> Option<i64> {
 }
 
 // Part 1: Count the number of peaks reachable from starting points
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let puzzles = parse(input);
     
-    puzzles
-        .into_iter()
-        .map(|p| solve_with_math(p, false))
-        .filter_map(|x| x)
-        .sum()
+    Box::new(
+        puzzles
+            .into_iter()
+            .map(|p| solve_with_math(p, false))
+            .filter_map(|x| x)
+            .sum::<i64>()
+    )
 }
 
 // Part 2: Count the total number of paths from starting points to peaks
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let puzzles = parse(input);
     
-    puzzles
-        .into_iter()
-        .map(|p| solve_with_math(p, true))
-        .filter_map(|x| x)
-        .sum()
+    Box::new(
+        puzzles
+            .into_iter()
+            .map(|p| solve_with_math(p, true))
+            .filter_map(|x| x)
+            .sum::<i64>()
+    )
 }
 
 #[cfg(test)]
@@ -171,6 +175,6 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT.to_string());
     }
 }

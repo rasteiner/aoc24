@@ -53,7 +53,7 @@ fn checksum(disk: &Vec<Block>) -> i64 {
     checksum
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let disk = parse(input);
     let mut fragmented = Vec::new();
 
@@ -84,7 +84,7 @@ pub fn part1(input: &String) -> i64 {
         }
     }
 
-    checksum(&fragmented)
+    Box::new(checksum(&fragmented))
 }
 
 fn parse2(input: &String) -> Vec<Chunk> {
@@ -110,7 +110,7 @@ fn parse2(input: &String) -> Vec<Chunk> {
 
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let mut disk = parse2(input);
 
     for chunk in disk.clone().into_iter().rev() {
@@ -159,7 +159,7 @@ pub fn part2(input: &String) -> i64 {
         }
     }
 
-    checksum(&compact)
+    Box::new(checksum(&compact))
 
 }
 
@@ -173,11 +173,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

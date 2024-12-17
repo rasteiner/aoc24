@@ -189,7 +189,7 @@ fn print_map(grid: &Grid, robot: &Robot) {
     }
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let (mut grid, instructions, mut robot) = parse(input);
 
     #[cfg(test)]
@@ -222,11 +222,13 @@ pub fn part1(input: &String) -> i64 {
         }
     }
 
-    gps.try_into().unwrap()
+    Box::new(
+        i64::try_from(gps).unwrap()
+    )
 }
 
-pub fn part2(input: &String) -> i64 {
-    0
+pub fn part2(input: &String) -> Box<dyn ToString> {
+    Box::new(0)
 }
 
 #[cfg(test)]
@@ -276,16 +278,16 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1_small() {
-        assert_eq!(part1(&String::from(TEST_INPUT_SMALL)), TEST_RESULT_SMALL);
+        assert_eq!(part1(&String::from(TEST_INPUT_SMALL)).to_string(), TEST_RESULT_SMALL.to_string());
     }
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

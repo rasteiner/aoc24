@@ -89,7 +89,7 @@ fn next(map: &Map, coord: &Coord) -> Result<Vec<Coord>, ()> {
 }
 
 // Part 1: Count the number of peaks reachable from starting points
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let map = create_map(input);
     let peaks = peaks(&map);
     let starts = starts(&map);
@@ -131,11 +131,11 @@ pub fn part1(input: &String) -> i64 {
         );
     });
 
-    count.load(Ordering::SeqCst) as i64
+    Box::new(count.load(Ordering::SeqCst))
 }
 
 // Part 2: Count the total number of paths from starting points to peaks
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let map = create_map(input);
     let starts = starts(&map);
 
@@ -168,7 +168,7 @@ pub fn part2(input: &String) -> i64 {
         count += find(&map, start, &mut cache);
     });
 
-    count as i64
+    Box::new(count)
 }
 
 #[cfg(test)]
@@ -192,12 +192,12 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

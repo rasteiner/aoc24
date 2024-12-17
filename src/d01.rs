@@ -11,7 +11,7 @@ fn parse_columns(input: &String) -> (Vec<i64>, Vec<i64>) {
     (left, right)
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let (mut left, mut right) = parse_columns(input);
 
     // sort the vectors
@@ -19,19 +19,20 @@ pub fn part1(input: &String) -> i64 {
     right.sort();
 
     // zip the vectors and sum the differences
-    left.into_iter().zip(right.into_iter()).map(|(l, r)| (r - l).abs()).sum()
+    let sum: i64 = left.into_iter().zip(right.into_iter()).map(|(l, r)| (r - l).abs()).sum();
+    Box::new(sum)
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let (left, right) = parse_columns(input);
 
     // for each number of left, count how many times it appears in right, multiply and sum
-    let mut sum = 0;
+    let mut sum: i64 = 0;
     for l in left {
         sum += l * right.iter().filter(|&r| *r == l).count() as i64;
     }
 
-    sum
+    Box::new(sum)
 }
 
 #[cfg(test)]
@@ -52,11 +53,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&TEST_INPUT.to_string()).to_string(), TEST_RESULT1.to_string());        
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&TEST_INPUT.to_string()).to_string(), TEST_RESULT2.to_string());
     }
 }

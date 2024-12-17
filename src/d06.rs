@@ -172,7 +172,7 @@ impl Guard {
     }
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let mut w = World::from_str(input).or_else(|e| {
         eprintln!("{}", e);
         Err(0)
@@ -192,10 +192,11 @@ pub fn part1(input: &String) -> i64 {
     }
 
     let unique_coords: HashSet<(i64, i64)> = w.guard.path.into_iter().map(|step| (step.0, step.1)).collect();
-    unique_coords.len() as i64
+    
+    Box::new(unique_coords.len())
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let mut w = World::from_str(input).or_else(|e| {
         eprintln!("{}", e);
         Err(0)
@@ -263,7 +264,7 @@ pub fn part2(input: &String) -> i64 {
 
     let loop_count = Arc::try_unwrap(loop_count).unwrap().into_inner().unwrap();
 
-    loop_count
+    Box::new(loop_count)
 }
 
 #[cfg(test)]
@@ -288,11 +289,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

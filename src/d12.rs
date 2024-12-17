@@ -61,7 +61,7 @@ fn perimeter(area: &Area) -> i64 {
     perimeter
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let grid = make_grid(input);
     let mut areas: Vec<Area> = vec![];
 
@@ -77,9 +77,9 @@ pub fn part1(input: &String) -> i64 {
         }
     }
 
-    areas.into_par_iter().map(|a| {
+    Box::new(areas.into_par_iter().map(|a| {
         perimeter(&a) * a.len() as i64
-    }).sum()
+    }).sum::<i64>())
 }
 
 
@@ -137,7 +137,7 @@ fn sides(area: &Area) -> i64 {
     corners
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let grid = make_grid(input);
     let mut areas: Vec<Area> = vec![];
 
@@ -153,9 +153,9 @@ pub fn part2(input: &String) -> i64 {
         }
     }
 
-    areas.into_par_iter().map(|a| {
+    Box::new(areas.into_par_iter().map(|a| {
         sides(&a) * a.len() as i64
-    }).sum()
+    }).sum::<i64>())
 }
 
 #[cfg(test)]
@@ -202,24 +202,24 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1_small() {
-        assert_eq!(part1(&String::from(TEST_SMALL)), TEST_RESULT_SMALL);
-        assert_eq!(part1(&String::from(TEST_SMALL2)), TEST_RESULT_SMALL2);
+        assert_eq!(part1(&String::from(TEST_SMALL)).to_string(), TEST_RESULT_SMALL.to_string());
+        assert_eq!(part1(&String::from(TEST_SMALL2)).to_string(), TEST_RESULT_SMALL2.to_string());
     }
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     // Test for part2
     #[test]
     fn test_part2_small() {
-        assert_eq!(part2(&String::from(TEST_SMALL)), TEST_RESULT_SMALL_P2);
-        assert_eq!(part2(&String::from(TEST_SMALL2)), TEST_RESULT_SMALL2_P2);
+        assert_eq!(part2(&String::from(TEST_SMALL)).to_string(), TEST_RESULT_SMALL_P2.to_string());
+        assert_eq!(part2(&String::from(TEST_SMALL2)).to_string(), TEST_RESULT_SMALL2_P2.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

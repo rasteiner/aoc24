@@ -52,15 +52,6 @@ impl Direction {
             Direction::West => Vector(-1, 0),
         }
     }
-
-    fn opposite(&self) -> Direction {
-        match self {
-            Direction::North => Direction::South,
-            Direction::East => Direction::West,
-            Direction::South => Direction::North,
-            Direction::West => Direction::East,
-        }
-    }
 }
 
 impl TryFrom<Direction> for usize {
@@ -401,14 +392,14 @@ impl Map {
     }
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let mut map = Map::new(input);
     map.compute();
 
-    map.try_get_lowest(map.end).unwrap().0
+    Box::new(map.try_get_lowest(map.end).unwrap().0)
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let mut map = Map::new(input);
 
     let set = std::thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(move|| {    
@@ -425,7 +416,7 @@ pub fn part2(input: &String) -> i64 {
     }).unwrap().join().unwrap();
 
     
-    set.len() as i64
+    Box::new(set.len())
 }
 
 #[cfg(test)]
@@ -480,14 +471,14 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT_1)), TEST_RESULT_1);
-        assert_eq!(part1(&String::from(TEST_INPUT_2)), TEST_RESULT_2);
+        assert_eq!(part1(&String::from(TEST_INPUT_1)).to_string(), TEST_RESULT_1.to_string());
+        assert_eq!(part1(&String::from(TEST_INPUT_2)).to_string(), TEST_RESULT_2.to_string());
     }
     
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT_1)), TEST2_RESULT_1);
-        assert_eq!(part2(&String::from(TEST_INPUT_2)), TEST2_RESULT_2);
+        assert_eq!(part2(&String::from(TEST_INPUT_1)).to_string(), TEST2_RESULT_1.to_string());
+        assert_eq!(part2(&String::from(TEST_INPUT_2)).to_string(), TEST2_RESULT_2.to_string());
     }
 }

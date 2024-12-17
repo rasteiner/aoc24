@@ -16,14 +16,16 @@ fn check(report: &Vec<i64>) -> bool {
         .all(|diff| diff.signum() == sign && diff.abs() <= 3)
 }
 
-pub fn part1(input: &String) -> i64 {
+pub fn part1(input: &String) -> Box<dyn ToString> {
     let reports = parse(input);
-    reports.into_iter().filter(check).count() as i64
+
+    Box::new(reports.into_iter().filter(check).count())
 }
 
-pub fn part2(input: &String) -> i64 {
+pub fn part2(input: &String) -> Box<dyn ToString> {
     let reports = parse(input);
-    reports.into_iter().filter(|report| {
+
+    Box::new(reports.into_iter().filter(|report| {
         if check(report) {
             return true;
         }
@@ -33,7 +35,7 @@ pub fn part2(input: &String) -> i64 {
             report.remove(i);
             check(&report)
         })
-    }).count() as i64
+    }).count() as i64)
 }
 
 #[cfg(test)]
@@ -54,11 +56,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(&String::from(TEST_INPUT)), TEST_RESULT1);
+        assert_eq!(part1(&String::from(TEST_INPUT)).to_string(), TEST_RESULT1.to_string());
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(&String::from(TEST_INPUT)), TEST_RESULT2);
+        assert_eq!(part2(&String::from(TEST_INPUT)).to_string(), TEST_RESULT2.to_string());
     }
 }

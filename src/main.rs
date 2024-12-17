@@ -1,10 +1,10 @@
 use std::{fmt::{self, Display}, fs, sync::LazyLock, time::Instant};
 
-type Part = fn(&String) -> i64;
+type Part = fn(&String) -> Box<dyn ToString>;
 
 #[macro_use]
 mod days;
-days!(d01, d02, d03, d04, d05, d06, d07, d08, d09, d10, d11, d12, d13, d14, d15, d16);
+days!(d01, d02, d03, d04, d05, d06, d07, d08, d09, d10, d11, d12, d13, d14, d15, d16, d17);
 
 #[derive(Clone)]
 struct Day {
@@ -34,12 +34,12 @@ fn main() {
             let start = Instant::now();
             let result = (day.part1)(&input);
             let duration = start.elapsed();
-            println!("Part 1: {} (took {:?})", result, duration);
+            println!("Part 1: {} (took {:?})", result.to_string(), duration);
         
             let start = Instant::now();
             let result = (day.part2)(&input);
             let duration = start.elapsed();
-            println!("Part 2: {} (took {:?})", result, duration);        
+            println!("Part 2: {} (took {:?})", result.to_string(), duration);        
         } else {
             println!("Could not read input file");
         }

@@ -3,7 +3,7 @@ macro_rules! days {
     ($($day:ident),*) => {
         $(mod $day;)*
         static DAYS: LazyLock<Vec<Day>> = LazyLock::new(|| {
-            let parts: Vec<(&str, Part, Part)> = vec![
+            let parts: Vec<(&str, fn(&String) -> Box<dyn ToString>, fn(&String) -> Box<dyn ToString>)> = vec![
                 $(
                     (stringify!($day), $day::part1, $day::part2),
                 )*
