@@ -212,7 +212,7 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
 
     let mut find_for = |n: i64| {
         (0..=64).find(|a| {
-            run(n) == *a
+            run(*a) == n
         }).unwrap()
     };
 
