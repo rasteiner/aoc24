@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, str::FromStr};
+use std::collections::VecDeque;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tile {
@@ -90,15 +90,15 @@ fn solve_part2(input: &String, width: usize, height: usize) -> String {
         height
     };
 
-    for _ in 1..5000 {
-        let (x, y) = coords.next().unwrap();
+    while let Some((x,y)) = coords.next()  {
         map.grid[y][x] = Tile::Blocked;
 
         if find_path_cost(&map).is_none() {
             return format!("{},{}", x, y);
         }
     }
-    "".to_string()
+    
+    panic!("No solution found");
 }
 
 pub fn part1(input: &String) -> Box<dyn ToString> {
@@ -114,7 +114,7 @@ mod tests {
     use indoc::indoc;
     use super::*;
 
-    const TEST_INPUT_1: &str = indoc! {"
+    const TEST_INPUT: &str = indoc! {"
         5,4
         4,2
         4,5
@@ -147,13 +147,13 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(solve_part1(&String::from(TEST_INPUT_1), 7, 7, 12), TEST_RESULT_1);
+        assert_eq!(solve_part1(&String::from(TEST_INPUT), 7, 7, 12), TEST_RESULT_1);
     }
 
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(solve_part2(&String::from(TEST_INPUT_1), 7, 7), TEST_RESULT_2.to_string());
+        assert_eq!(solve_part2(&String::from(TEST_INPUT), 7, 7), TEST_RESULT_2.to_string());
     }
     
 }
