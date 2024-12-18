@@ -37,7 +37,7 @@ fn make_grid(input: &String, width: usize, height: usize, bytes: usize) -> Grid 
     }
 }
 
-fn find_path_cost(grid: &Grid) -> Option<i64> {
+fn find_path_cost(grid: &Grid, count: &mut usize) -> Option<i64> {
     let width = grid.width;
     let height = grid.height;
 
@@ -50,8 +50,10 @@ fn find_path_cost(grid: &Grid) -> Option<i64> {
     let mut costs = vec![vec![std::i64::MAX; width]; height];
     costs[start.1][start.0] = 0;
 
+    
     while let Some((x, y)) = stack.pop_front() {
         let cost = costs[y][x];
+        *count += 1;
         if (x, y) == end {
             return Some(cost);
         }
@@ -77,7 +79,12 @@ fn find_path_cost(grid: &Grid) -> Option<i64> {
 // these are in separate functions because test and real input have different arguments that aren't specified in the input
 fn solve_part1(input: &String, width: usize, height: usize, bytes: usize) -> i64 {
     let grid = make_grid(input, width, height, bytes);
-    find_path_cost(&grid).unwrap()
+    let mut count = 0usize;
+    
+    let r = find_path_cost(&grid, &mut count).unwrap();
+    println!("Found solution after {} iterations", count);
+    r
+
 }
 
 fn solve_part2(input: &String, width: usize, height: usize) -> String {
@@ -90,10 +97,14 @@ fn solve_part2(input: &String, width: usize, height: usize) -> String {
         height
     };
 
+    let mut count = 0usize;
+
+
     while let Some((x,y)) = coords.next()  {
         map.grid[y][x] = Tile::Blocked;
 
-        if find_path_cost(&map).is_none() {
+        if find_path_cost(&map, &mut count).is_none() {
+            println!("Found solution after {} iterations", count);
             return format!("{},{}", x, y);
         }
     }
