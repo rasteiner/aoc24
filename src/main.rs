@@ -1,5 +1,7 @@
 use std::{fmt::{self, Display}, fs, sync::LazyLock, time::Instant};
 
+use colored::Colorize;
+
 type Part = fn(&String) -> Box<dyn ToString>;
 
 #[macro_use]
@@ -31,17 +33,19 @@ fn main() {
         let day = day.unwrap();
         
         if let Ok(input) = fs::read_to_string(format!("inputs/d{:0>2}.txt", day.num)) {
+            println!("Running {}...\n", day);
             let start = Instant::now();
             let result = (day.part1)(&input);
             let duration = start.elapsed();
-            println!("Part 1: {} (took {:?})", result.to_string(), duration);
+            println!("» Part 1: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
         
             let start = Instant::now();
             let result = (day.part2)(&input);
             let duration = start.elapsed();
-            println!("Part 2: {} (took {:?})", result.to_string(), duration);        
+            println!("» Part 2: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
+            println!();
         } else {
-            println!("Could not read input file");
+            println!("{}", "Could not read input file".red());
         }
     }
 }
