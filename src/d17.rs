@@ -200,8 +200,6 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
 
     let mut program: Program = input.parse().unwrap();
     let code = program.code.clone();
-    println!("Transpiled program:\n===================\n{}\n===================\n", program.transpile());
-
     let mut run = |n: i64| {
         program.reg_a = n;
         program.pc = 0;
@@ -210,16 +208,15 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
         program.output[0]
     };
 
-    let mut find_for = |n: i64| {
-        (0..=64).find(|a| {
-            run(*a) == n
+    let mut find_for = |base: i64, n: i64| {
+        (0..=100).find(|a| {
+            run(base | *a) == n
         }).unwrap()
     };
 
     let mut n = 0;
     for c in code.iter().rev() {
-        n = n << 3 | find_for(*c);
-        println!("{:?} {}", n, c);
+        n = n << 3 | find_for(n << 3, *c);
     }
 
     run(n);
