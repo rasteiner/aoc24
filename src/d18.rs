@@ -58,7 +58,7 @@ fn find_path_cost(grid: &Grid, count: &mut usize) -> Option<i64> {
             return Some(cost);
         }
 
-        for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)].iter() {
+        for (dx, dy) in [(1, 0), (0, 1), (-1, 0), (0, -1)].iter() {
             let nx = x as i64 + dx;
             let ny = y as i64 + dy;
             if nx >= 0 && nx < width as i64 && ny >= 0 && ny < height as i64 {
