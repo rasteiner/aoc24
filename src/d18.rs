@@ -58,7 +58,20 @@ fn find_path_cost(grid: &Grid, count: &mut usize) -> Option<i64> {
             return Some(cost);
         }
 
-        for (dx, dy) in [(1, 0), (0, 1), (-1, 0), (0, -1)].iter() {
+        for (dx, dy) in [(1, 0), (0, 1)].iter() {
+            let nx = x as i64 + dx;
+            let ny = y as i64 + dy;
+            if nx >= 0 && nx < width as i64 && ny >= 0 && ny < height as i64 {
+                let nx = nx as usize;
+                let ny = ny as usize;
+                if grid.grid[ny][nx] == Tile::Empty && cost + 1 < costs[ny][nx] {
+                    costs[ny][nx] = cost + 1;
+                    stack.push_front((nx, ny));
+                }
+            }
+        }
+
+        for (dx, dy) in [(-1, 0), (0, -1)].iter() {
             let nx = x as i64 + dx;
             let ny = y as i64 + dy;
             if nx >= 0 && nx < width as i64 && ny >= 0 && ny < height as i64 {
@@ -87,9 +100,9 @@ fn solve_part1(input: &String, width: usize, height: usize, bytes: usize) -> i64
 
 }
 
-fn solve_part2(input: &String, width: usize, height: usize) -> String {
+fn solve_part2(input: &String, width: usize, height: usize, starting: usize) -> String {
     let tiles = vec![vec![Tile::Empty; width]; height];
-    let mut coords = make_coords_iter(input);
+    let coords = make_coords_iter(input);
 
     let mut map = Grid {
         grid: tiles,
@@ -98,11 +111,15 @@ fn solve_part2(input: &String, width: usize, height: usize) -> String {
     };
 
     let mut count = 0usize;
+    let mut it = 0;
 
-
-    while let Some((x,y)) = coords.next()  {
+    for (x,y) in coords  {
         map.grid[y][x] = Tile::Blocked;
-
+        it += 1;
+        if it < starting {
+            continue;
+        }
+        
         if find_path_cost(&map, &mut count).is_none() {
             println!("Found solution after {} iterations", count);
             return format!("{},{}", x, y);
@@ -117,7 +134,7 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
 }
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    Box::new(solve_part2(input, 71, 71))
+    Box::new(solve_part2(input, 71, 71, 1024))
 }
 
 #[cfg(test)]
@@ -164,7 +181,7 @@ mod tests {
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(solve_part2(&String::from(TEST_INPUT), 7, 7), TEST_RESULT_2.to_string());
+        assert_eq!(solve_part2(&String::from(TEST_INPUT), 7, 7, 12), TEST_RESULT_2.to_string());
     }
     
 }
