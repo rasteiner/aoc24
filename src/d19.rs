@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use rayon::iter::{ParallelBridge, ParallelIterator};
+
 fn parse(input: &String) -> (Vec<&str>, impl Iterator<Item=&str>) {
     let mut lines = input.lines();
 
@@ -31,12 +33,9 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
     let (towels, lines) = parse(input);
-    let mut count: i64 = 0;
-    let mut cache = HashMap::new();
 
-    fn do_it(str: &str, options: &Vec<&str>, cache: &mut HashMap<String, i64>, hits: &mut usize) -> i64 {
+    fn do_it(str: &str, options: &Vec<&str>, cache: &mut HashMap<String, i64>) -> i64 {
         if let Some(&c) = cache.get(str) {
-            *hits += 1;
             return c;
         }
 
@@ -47,7 +46,7 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
                     if remaining.is_empty() {
                         count += 1;
                     } else {
-                        count += do_it(remaining, options, cache, hits);
+                        count += do_it(remaining, options, cache);
                     }
                 }
             } else {
@@ -59,14 +58,10 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
         count
     }
 
-    let mut hits = 0;
-
-    for line in lines {
-        count += do_it(line, &towels, &mut cache, &mut hits);
-    }
-
-    // cache usage
-    println!("Cache: {} entries; {} hits", cache.len(), hits);
+    let count: i64 = lines.par_bridge().map(|line| {
+        let mut cache = HashMap::new();
+        do_it(line, &towels, &mut cache)
+    }).sum();
 
     Box::new(count)
 }
