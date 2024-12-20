@@ -124,13 +124,16 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
     let map = make_grid(input);
     let path = find_path(&map).unwrap();
     
+    #[cfg(test)]
     let mut savings = HashMap::new();
+
+    let mut count = 0;
 
     for (i, (x, y)) in path.iter().enumerate() {
         let x = *x;
         let y = *y;
         
-        for (j, (nx, ny)) in path.iter().enumerate().skip(i+2+min_saving) {
+        for (j, (nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
             let nx = *nx;
             let ny = *ny;
 
@@ -144,27 +147,18 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
                 continue;
             }
 
+            count += 1;
+            
+            #[cfg(test)]
             savings.entry(j-i-md).or_insert(0).add_assign(1);
-
         }
     }
-
-    let mut count = 0;
 
     #[cfg(test)]
     {
         // sort savings by key and print all
         for (steps, count_for_steps) in savings.iter().sorted() {
-            count += count_for_steps;
             println!("There are {} cheats that save {} picoseconds", count_for_steps, steps);
-        }
-    }
-
-    #[cfg(not(test))]
-    {
-        // sort savings by key and print all
-        for (_,count_for_steps) in savings {
-            count += count_for_steps;
         }
     }
     
