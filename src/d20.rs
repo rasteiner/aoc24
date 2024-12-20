@@ -121,11 +121,19 @@ fn find_path(grid: &Grid) -> Option<Vec<(usize, usize)>> {
 }
 
 fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) -> usize {
+    let start = std::time::Instant::now();
     let map = make_grid(input);
+    println!("Grid created in {:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
     let path = find_path(&map).unwrap();
+    println!("Path found in {:?}", start.elapsed());
     
+    let start = std::time::Instant::now();
     #[cfg(test)]
     let mut savings = HashMap::new();
+    
+    let mut iterations: usize = 0;
 
     let mut count = 0;
 
@@ -136,6 +144,8 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
         for (j, (nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
             let nx = *nx;
             let ny = *ny;
+
+            iterations += 1;
 
             // check if in range
             let md = x.abs_diff(nx) + y.abs_diff(ny);
@@ -161,7 +171,10 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
             println!("There are {} cheats that save {} picoseconds", count_for_steps, steps);
         }
     }
+
+    println!("Found {} shortcuts in {:?}", count, start.elapsed());
     
+    println!("Total iterations: {}", iterations);
     count
 }
 
