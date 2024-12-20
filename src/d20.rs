@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, VecDeque}, ops::AddAssign};
 use itertools::Itertools;
-use rayon::vec;
+use rayon::{iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator}, vec};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tile {
@@ -129,17 +129,16 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
     let h = map.width as i64;
     let w = map.height as i64;
 
-    let mut count = 0;
-
     // index the path
     let mut path_grid = vec![vec![None; h as usize]; w as usize];
     for (i, &(x, y)) in path.iter().enumerate() {
         path_grid[x][y] = Some(i);
     }
 
-    for (i, (x, y)) in path.into_iter().enumerate() {
+    path.par_iter().enumerate().map(|(i, &(x, y))| {
         let x = x as i64;
         let y = y as i64;
+        let mut count = 0;
         
         for dx  in -cheat_time..=cheat_time {
             let r = cheat_time - dx.abs();
@@ -160,9 +159,9 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
                 }
             }
         }
-    }
 
-    count
+        count
+    }).sum()
 }
 
 
