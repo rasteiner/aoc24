@@ -120,7 +120,60 @@ fn find_path(grid: &Grid) -> Option<Vec<(usize, usize)>> {
     Some(path)
 }
 
-fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) -> usize {
+fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> usize {
+    
+    let map = make_grid(input);
+    let path = find_path(&map).unwrap();
+
+    let h = map.width as i64;
+    let w = map.height as i64;
+
+    let mut count = 0;
+
+    // index the path
+    let mut path_index = HashMap::new();
+    for (i, (x, y)) in path.iter().enumerate() {
+        path_index.insert((*x, *y), i);
+    }
+
+
+    for (i, (x, y)) in path.into_iter().enumerate() {
+        let x = x as i64;
+        let y = y as i64;
+        
+        for dx  in -cheat_time..=cheat_time {
+            let r = cheat_time - dx.abs();
+
+            for dy in -r..=r {
+                let nx = x + dx;
+                let ny = y + dy;
+                
+                if nx < 0 || nx >= w || ny < 0 || ny >= h {
+                    continue;
+                }
+                
+                if let Some(&j) = path_index.get(&(nx as usize, ny as usize)) {
+                    if i >= j {
+                        continue;
+                    }
+
+                    let j = j as i64;
+                    let i = i as i64;
+
+                    if j - i - dx.abs() - dy.abs() < min_saving as i64 {
+                        continue;
+                    }
+
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    count
+}
+
+fn count_on_path(input: &String, min_saving: usize, cheat_time: usize) -> usize {
     let map = make_grid(input);
     let path = find_path(&map).unwrap();
     
@@ -129,14 +182,8 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
 
     let mut count = 0;
 
-    for (i, (x, y)) in path.iter().enumerate() {
-        let x = *x;
-        let y = *y;
-        
-        for (j, (nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
-            let nx = *nx;
-            let ny = *ny;
-
+    for (i, &(x, y)) in path.iter().enumerate() {
+        for (j, &(nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
             // check if in range
             let md = x.abs_diff(nx) + y.abs_diff(ny);
             if md > cheat_time {
@@ -166,11 +213,11 @@ fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) ->
 }
 
 pub fn part1(input: &String) -> Box<dyn ToString> {
-    Box::new(count_shortcuts_over(input, 100, 2))
+    Box::new(count_around_kernel(input, 100, 2))
 }
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    Box::new(count_shortcuts_over(input, 100, 20))
+    Box::new(count_on_path(input, 100, 20))
 }
 
 #[cfg(test)]
@@ -199,13 +246,15 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(count_shortcuts_over(&TEST_INPUT.to_string(), 2, 2), 44);
+        assert_eq!(count_on_path(&TEST_INPUT.to_string(), 2, 2), 44);
+        assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 2, 2), 44);
     }
 
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(count_shortcuts_over(&TEST_INPUT.to_string(), 50, 20), 285);
+        assert_eq!(count_on_path(&TEST_INPUT.to_string(), 50, 20), 285);
+        assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 50, 20), 285);
     }
     
     
