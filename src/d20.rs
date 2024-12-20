@@ -149,10 +149,6 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
                 let ny = y + dy;
                 
                 if let Some(&Some(j)) = path_grid.get(nx as usize).and_then(|row| row.get(ny as usize)) {
-                    if i >= j {
-                        continue;
-                    }
-
                     let j = j as i64;
                     let i = i as i64;
 
