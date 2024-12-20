@@ -1,5 +1,6 @@
 use std::{collections::{HashMap, VecDeque}, ops::AddAssign};
 use itertools::Itertools;
+use rayon::vec;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tile {
@@ -131,11 +132,10 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
     let mut count = 0;
 
     // index the path
-    let mut path_index = HashMap::new();
-    for (i, (x, y)) in path.iter().enumerate() {
-        path_index.insert((*x, *y), i);
+    let mut path_grid = vec![vec![None; h as usize]; w as usize];
+    for (i, &(x, y)) in path.iter().enumerate() {
+        path_grid[x][y] = Some(i);
     }
-
 
     for (i, (x, y)) in path.into_iter().enumerate() {
         let x = x as i64;
@@ -148,11 +148,7 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
                 let nx = x + dx;
                 let ny = y + dy;
                 
-                if nx < 0 || nx >= w || ny < 0 || ny >= h {
-                    continue;
-                }
-                
-                if let Some(&j) = path_index.get(&(nx as usize, ny as usize)) {
+                if let Some(&Some(j)) = path_grid.get(nx as usize).and_then(|row| row.get(ny as usize)) {
                     if i >= j {
                         continue;
                     }
@@ -173,51 +169,13 @@ fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> us
     count
 }
 
-fn count_on_path(input: &String, min_saving: usize, cheat_time: usize) -> usize {
-    let map = make_grid(input);
-    let path = find_path(&map).unwrap();
-    
-    #[cfg(test)]
-    let mut savings = HashMap::new();
-
-    let mut count = 0;
-
-    for (i, &(x, y)) in path.iter().enumerate() {
-        for (j, &(nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
-            // check if in range
-            let md = x.abs_diff(nx) + y.abs_diff(ny);
-            if md > cheat_time {
-                continue;
-            }
-
-            if j-i-md < min_saving {
-                continue;
-            }
-
-            count += 1;
-            
-            #[cfg(test)]
-            savings.entry(j-i-md).or_insert(0).add_assign(1);
-        }
-    }
-
-    #[cfg(test)]
-    {
-        // sort savings by key and print all
-        for (steps, count_for_steps) in savings.iter().sorted() {
-            println!("There are {} cheats that save {} picoseconds", count_for_steps, steps);
-        }
-    }
-    
-    count
-}
 
 pub fn part1(input: &String) -> Box<dyn ToString> {
     Box::new(count_around_kernel(input, 100, 2))
 }
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    Box::new(count_on_path(input, 100, 20))
+    Box::new(count_around_kernel(input, 100, 20))
 }
 
 #[cfg(test)]
@@ -246,14 +204,12 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(count_on_path(&TEST_INPUT.to_string(), 2, 2), 44);
         assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 2, 2), 44);
     }
 
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(count_on_path(&TEST_INPUT.to_string(), 50, 20), 285);
         assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 50, 20), 285);
     }
     
