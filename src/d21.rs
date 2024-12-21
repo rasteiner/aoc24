@@ -121,56 +121,33 @@ static DIRECTIONS: LazyLock<Vec<Vec<Direction>>> = LazyLock::new(||
     ]
 );
 
-static TRANSITION_TABLE: LazyLock<HashMap<(char,char), usize>> = LazyLock::new(|| {
-    let mut table = HashMap::new();
+fn get_best_transition(from: char, to: char) -> usize {
+    if from == to {
+        return 1;
+    }
+
+    let mut best_length = usize::MAX;
     
-    for from in 0..=10u8 {
+    for directions_1 in 0..DIRECTIONS.len() {
+        for directions_2 in 0..DIRECTIONS.len() {
+            let mut robots = vec![Robot::new_numpad(directions_1), Robot::new_dirpad(directions_2), Robot::new_dirpad(0)];
+            let &(x,y) = NUMPAD_INDEX.get(&from).unwrap();
+            robots[0].x = x;
+            robots[0].y = y;
 
-        // transform the number to a hex number string
-        let from_button = match from {
-            10 => 'A',
-            _ => (from + 48) as char
-        };
+            let sequence: String= robots.iter_mut().fold(to.to_string(), |acc, robot| {
+                let seq: String = robot.find_sequence(&acc).iter().map(|a| a.to_char()).collect();
+                seq
+            });
 
-        for to in 0..=10u8 {
-            
-            let to_button = match to {
-                10 => 'A',
-                _ => (to + 48) as char
-            }; 
-
-            if from == to {
-                table.insert((from_button, to_button), 1);
-                continue;
+            if sequence.len() < best_length {
+                best_length = sequence.len();
             }
-
-
-            let mut best_length = usize::MAX;
-            
-            for directions_1 in 0..DIRECTIONS.len() {
-                for directions_2 in 0..DIRECTIONS.len() {
-                    let mut robots = vec![Robot::new_numpad(directions_1), Robot::new_dirpad(directions_2), Robot::new_dirpad(0)];
-                    let &(x,y) = NUMPAD_INDEX.get(&from_button).unwrap();
-                    robots[0].x = x;
-                    robots[0].y = y;
-
-                    let sequence: String= robots.iter_mut().fold(to_button.to_string(), |acc, robot| {
-                        let seq: String = robot.find_sequence(&acc).iter().map(|a| a.to_char()).collect();
-                        seq
-                    });
-
-                    if sequence.len() < best_length {
-                        best_length = sequence.len();
-                    }
-                }
-            }
-
-            table.insert((from_button, to_button), best_length);
         }
     }
 
-    table
-});
+    best_length
+}
 
 impl Robot {
     fn new(pad: &'static Vec<Vec<Button>>, index: &'static HashMap<char, (usize, usize)>, directions: usize) -> Robot {
@@ -237,14 +214,16 @@ impl Robot {
 pub fn part1(input: &String) -> Box<dyn ToString> {
 
     let mut sum = 0;
+    let mut cache = HashMap::new(); 
 
     for line in input.lines() {
         let mut len = 0;
         let mut previous = 'A';
         for c in line.chars() {
             // parse as hex number
-            let seqlen = TRANSITION_TABLE.get(&(previous, c))
-                .expect(format!("No transition found for {} -> {}\n\n{:?}", previous, c, TRANSITION_TABLE).as_str());
+            let seqlen = cache.entry((previous, c))
+                .or_insert_with(|| get_best_transition(previous, c))
+                .clone();
             len += seqlen;
             previous = c;
         }
