@@ -1,5 +1,4 @@
-use core::num;
-use std::{path::Iter, sync::atomic::{AtomicU64, Ordering}};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use itertools::Itertools;
 use rayon::prelude::*;
@@ -46,6 +45,33 @@ impl Iterator for Generator {
     }
 }
 
+// just put the plain 8 bit representations in a u32
+fn encode((n1, n2, n3, n4): (i8, i8, i8, i8)) -> u32 {
+    ((n1 as u8 as u32) << 24) | ((n2 as u8 as u32) << 16) | ((n3 as u8 as u32) << 8) | (n4 as u8 as u32)
+}
+
+fn decode(num: u32) -> (i8, i8, i8, i8) {
+    (
+        (num >> 24) as i8,
+        (num >> 16) as i8,
+        (num >> 8) as i8,
+        num as i8
+    )
+}
+
+fn encode_sequences(num: u64) -> (Vec<u32>, Vec<u8>) {
+    let gen = Generator { num, digit: (num % 10) as u8, counter: 0 };
+    let mut sequences: Vec<u32> = vec![];
+    let mut digits: Vec<u8> = vec![];
+
+    for (n1, n2, n3, n4) in gen.tuple_windows() {
+        sequences.push(encode((n1.1, n2.1, n3.1, n4.1)));
+        digits.push(n4.0);
+    }
+
+    (sequences, digits)
+} 
+
 fn run2000(num: u64) -> u64 {
     let mut last = num;
     for _ in 0..2000 {
@@ -64,28 +90,26 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
     )
 }
 
-fn has_sequence(num: u64, combination:(i8,i8,i8,i8)) -> Option<u8> {
-    let gen = Generator { num, digit: (num % 10) as u8, counter: 0 };
-
-    for (n1, n2, n3, n4) in gen.tuple_windows() {
-        if n1.1 == combination.0 && n2.1 == combination.1 && n3.1 == combination.2 && n4.1 == combination.3 {
-            return Some(n4.0);
+fn has_sequence_encoded(sequences: &Vec<u32>, digits: &Vec<u8>, combination: u32) -> Option<u8> {
+    for (i, &seq) in sequences.iter().enumerate() {
+        if seq == combination {
+            return Some(digits[i]);
         }
     }
 
     None
 }
 
-fn run_partial(nums: &Vec<u64>, n1: i8) -> u64 {
+fn run_partial_encoded(nums: &Vec<(Vec<u32>, Vec<u8>)>, n1: i8) -> u64 {
     let mut best_score: u64 = 0;
 
     for n2 in -9..=9 {
         for n3 in -9..=9 {
             for n4 in -9..=9 {
-                let combination = (n1, n2, n3, n4);
-                let s = nums.iter().filter_map(|&num| has_sequence(num, combination)).map(|u8| u8 as u64).sum();
+                let combination = encode((n1, n2, n3, n4));
+                let s = nums.iter().filter_map(|num| has_sequence_encoded(&num.0, &num.1, combination)).map(|u8| u8 as u64).sum();
                 if s > best_score {
-                    println!("{:?}: {}", combination, s);
+                    println!("{:?}: {}", decode(combination), s);
                     best_score = s;
                 }
             }
@@ -96,15 +120,13 @@ fn run_partial(nums: &Vec<u64>, n1: i8) -> u64 {
 }
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    let nums: Vec<u64> = input.lines().map(|line| line.parse().unwrap()).collect();
-
-
+    let nums: Vec<(Vec<u32>, Vec<u8>)> = input.lines().map(|line| encode_sequences(line.parse().unwrap())).collect();
 
     // mutex for best_score
     let best_score = AtomicU64::new(0);
 
     (-9..=9).par_bridge().for_each(|n1| {
-        let best = run_partial(&nums, n1);
+        let best = run_partial_encoded(&nums, n1);
         best_score.fetch_max(best, Ordering::Relaxed);
     });
 
@@ -166,7 +188,6 @@ mod tests {
 
     #[test]
     fn test_2000() {
-
         assert_eq!(run2000(1), 8685429);
         assert_eq!(run2000(10), 4700978);
         assert_eq!(run2000(100), 15273692);
@@ -196,22 +217,21 @@ mod tests {
     }
 
     #[test]
-    fn test_has_sequence() {
-        assert_eq!(has_sequence(1, (-2,1,-1,3)), Some(7));
-        assert_eq!(has_sequence(2, (-2,1,-1,3)), Some(7));
-        assert_eq!(has_sequence(3, (-2,1,-1,3)), None);
-        assert_eq!(has_sequence(2024, (-2,1,-1,3)), Some(9));
+    fn test_encode() {
+        assert_eq!(encode((0,0,0,0)), 0);
+        assert_eq!(encode((0,0,0,1)), 1);
+        assert_eq!(encode((0,0,0,-1)), 255);
+        assert_eq!(encode((0,0,1,0)), 256);
     }
 
     #[test]
-    fn test_run_partial() {
-        assert_eq!(run_partial(&vec![1, 2, 3, 2024], -2), 23);
+    fn test_has_sequence_encoded() {
+        let (seq, dig) = encode_sequences(1);
+        assert_eq!(has_sequence_encoded(&seq, &dig, encode((-2,1,-1,3))), Some(7));
     }
 
     #[test]
-    fn test_part2() {
+    fn test_part2_encoded() {
         assert_eq!(part2(&TEST_INPUT_2.to_string()).to_string(), "23".to_string());
     }
-    
-    
 }
