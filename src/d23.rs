@@ -65,33 +65,27 @@ fn bron_kerbosch(
     p: &mut HashSet<String>,
     x: &mut HashSet<String>,
     graph: &HashMap<String, HashSet<String>>,
-    cliques: &mut HashSet<Vec<String>>
+    cliques: &mut Vec<HashSet<String>>
 ) {
     if p.is_empty() && x.is_empty() {
-        let mut new_clique: Vec<String> = r.into_iter().collect();
-        new_clique.sort();
-
-        cliques.insert(new_clique);
+        cliques.push(r);
         return;
     }
-
-    let mut to_remove = Vec::new();
 
     // chose a pivot vertex
     let pivot = p.union(x).next().unwrap().clone();
 
-    for v in p.difference(graph.get(&pivot).unwrap()) {
+    let subp: HashSet<String> = p.difference(graph.get(&pivot).unwrap()).cloned().collect();
+
+    for v in subp {
         let mut nr = r.clone();
         nr.insert(v.clone());
-        let mut np: HashSet<String> = p.intersection(graph.get(v).unwrap()).cloned().collect();
-        let mut nx: HashSet<String> = x.intersection(graph.get(v).unwrap()).cloned().collect();
+        let mut np: HashSet<String> = p.intersection(graph.get(&v).unwrap()).cloned().collect();
+        let mut nx: HashSet<String> = x.intersection(graph.get(&v).unwrap()).cloned().collect();
         bron_kerbosch(nr, &mut np, &mut nx, &graph, cliques);
 
-        to_remove.push(v.clone());
+        p.remove(&v.clone());
         x.insert(v.clone());
-    }
-    for v in to_remove {
-        p.remove(&v);
     }
 }
 
@@ -100,13 +94,20 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
     let graph = create_graph(&links);
 
     let mut p: HashSet<String> = graph.keys().cloned().collect();
-    let mut cliques = HashSet::new();
+    let mut cliques = Vec::new();
 
     bron_kerbosch(HashSet::new(), &mut p, &mut HashSet::new(), &graph, &mut cliques);
 
     // get largest clique
-    let largest = cliques.iter().max_by_key(|c| c.len()).unwrap();
-    
+    let mut largest: Vec<String> = cliques
+        .into_iter()
+        .max_by_key(|c| c.len())
+        .unwrap()
+        .into_iter()
+        .collect();
+
+    largest.sort();
+
     Box::new(largest.join(","))
 }
 
