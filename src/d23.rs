@@ -73,9 +73,9 @@ fn bron_kerbosch(
     }
 
     // chose a pivot vertex
-    let pivot = p.union(x).next().unwrap().clone();
+    let pivot = p.union(x).next().unwrap();
 
-    let subp: HashSet<String> = p.difference(graph.get(&pivot).unwrap()).cloned().collect();
+    let subp: HashSet<String> = p.difference(graph.get(pivot).unwrap()).cloned().collect();
 
     for v in subp {
         let mut nr = r.clone();
@@ -84,8 +84,9 @@ fn bron_kerbosch(
         let mut nx: HashSet<String> = x.intersection(graph.get(&v).unwrap()).cloned().collect();
         bron_kerbosch(nr, &mut np, &mut nx, &graph, cliques);
 
-        p.remove(&v.clone());
-        x.insert(v.clone());
+        // move v from p to x
+        p.remove(&v);
+        x.insert(v);
     }
 }
 
