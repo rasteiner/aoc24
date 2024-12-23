@@ -4,7 +4,7 @@ fn parse_input(input: &String) -> Vec<(&str, &str)> {
     input.lines().map(|l| l.split_once('-').unwrap()).collect()
 }
 
-fn create_graph<'a>(links: &'a Vec<(&'a str, &'a str)>) -> HashMap<&'a str, HashSet<&'a str>> {
+fn create_graph<'a>(links: &'a Vec<(&str, &str)>) -> HashMap<&'a str, HashSet<&'a str>> {
     let mut graph = HashMap::new();
 
     for &(l, r) in links {
@@ -15,34 +15,58 @@ fn create_graph<'a>(links: &'a Vec<(&'a str, &'a str)>) -> HashMap<&'a str, Hash
     graph
 }
 
+fn create_adjacency_matrix<'a>(links: &'a Vec<(&str, &str)>) -> (Vec<&'a str>, Vec<Vec<bool>>) {
+    let mut counter = 0;
+    let mut nodes = HashMap::new();
+    let mut index = Vec::new();
+    for &(l, r) in links {
+        if !nodes.contains_key(l) {
+            nodes.insert(l, counter);
+            index.push(l);
+            counter += 1;
+        }
+        if !nodes.contains_key(r) {
+            nodes.insert(r, counter);
+            index.push(r);
+            counter += 1;
+        }
+    }
+
+    let mut matrix = vec![vec![false; counter]; counter];
+    for &(l, r) in links {
+        let l = nodes[l];
+        let r = nodes[r];
+        matrix[l][r] = true;
+        matrix[r][l] = true;
+    }
+    
+    (index, matrix)
+
+}
+
 pub fn part1(input: &String) -> Box<dyn ToString> {
     let links = parse_input(input);
-    let graph = create_graph(&links);
+    let (index, matrix) = create_adjacency_matrix(&links);
 
-    let mut nets = HashSet::new();
+    // let mut nets = Vec::new();
+    let mut count = 0;
 
-    for (k, v) in &graph {
-        for n in v {
-            
-            if let Some(other) = graph.get(n) {
-                // get intersection of the two sets
-                let intersection = v.intersection(other).collect::<Vec<_>>();
-                
-                for i in intersection {
-                    let mut items = vec![k, n, i];
-                    items.sort();
-                    nets.insert(items);
+    for i in 0..index.len() {
+        for j in i+1..index.len() {
+            if matrix[i][j] {
+                for k in j+1..index.len() {
+                    if matrix[i][k] && matrix[j][k] && 
+                        (index[i].starts_with("t") || index[j].starts_with("t") || index[k].starts_with("t")) 
+                    {
+                        //nets.push(vec![index[i], index[j], index[k]]);
+                        count += 1;
+                    }
                 }
             }
         }
     }
     
-    Box::new(
-        nets
-            .into_iter()
-            .filter(|n| n.iter().any(|&x| x.starts_with("t")))
-            .count()
-    )
+    Box::new(count)
 }
 
 /**
