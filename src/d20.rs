@@ -1,5 +1,5 @@
-use std::{collections::{HashMap, VecDeque}, ops::AddAssign};
-use itertools::Itertools;
+use std::collections::VecDeque;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Tile {
@@ -120,70 +120,57 @@ fn find_path(grid: &Grid) -> Option<Vec<(usize, usize)>> {
     Some(path)
 }
 
-fn count_shortcuts_over(input: &String, min_saving: usize, cheat_time: usize) -> usize {
-    let start = std::time::Instant::now();
+fn count_around_kernel(input: &String, min_saving: usize, cheat_time: i64) -> usize {
+    
     let map = make_grid(input);
-    println!("Grid created in {:?}", start.elapsed());
 
-    let start = std::time::Instant::now();
     let path = find_path(&map).unwrap();
-    println!("Path found in {:?}", start.elapsed());
-    
-    let start = std::time::Instant::now();
-    #[cfg(test)]
-    let mut savings = HashMap::new();
-    
-    let mut iterations: usize = 0;
 
-    let mut count = 0;
+    let h = map.width as i64;
+    let w = map.height as i64;
 
-    for (i, (x, y)) in path.iter().enumerate() {
-        let x = *x;
-        let y = *y;
+    // index the path
+    let mut path_grid = vec![vec![None; h as usize]; w as usize];
+    for (i, &(x, y)) in path.iter().enumerate() {
+        path_grid[x][y] = Some(i);
+    }
+
+    path.par_iter().enumerate().map(|(i, &(x, y))| {
+        let x = x as i64;
+        let y = y as i64;
+        let mut count = 0;
         
-        for (j, (nx, ny)) in path.iter().enumerate().skip(i+min_saving) {
-            let nx = *nx;
-            let ny = *ny;
+        for dx  in -cheat_time..=cheat_time {
+            let r = cheat_time - dx.abs();
 
-            iterations += 1;
+            for dy in -r..=r {
+                let nx = x + dx;
+                let ny = y + dy;
+                
+                if let Some(&Some(j)) = path_grid.get(nx as usize).and_then(|row| row.get(ny as usize)) {
+                    let j = j as i64;
+                    let i = i as i64;
 
-            // check if in range
-            let md = x.abs_diff(nx) + y.abs_diff(ny);
-            if md > cheat_time {
-                continue;
+                    if j - i - dx.abs() - dy.abs() < min_saving as i64 {
+                        continue;
+                    }
+
+                    count += 1;
+                }
             }
-
-            if j-i-md < min_saving {
-                continue;
-            }
-
-            count += 1;
-            
-            #[cfg(test)]
-            savings.entry(j-i-md).or_insert(0).add_assign(1);
         }
-    }
 
-    #[cfg(test)]
-    {
-        // sort savings by key and print all
-        for (steps, count_for_steps) in savings.iter().sorted() {
-            println!("There are {} cheats that save {} picoseconds", count_for_steps, steps);
-        }
-    }
-
-    println!("Found {} shortcuts in {:?}", count, start.elapsed());
-    
-    println!("Total iterations: {}", iterations);
-    count
+        count
+    }).sum()
 }
 
+
 pub fn part1(input: &String) -> Box<dyn ToString> {
-    Box::new(count_shortcuts_over(input, 100, 2))
+    Box::new(count_around_kernel(input, 100, 2))
 }
 
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    Box::new(count_shortcuts_over(input, 100, 20))
+    Box::new(count_around_kernel(input, 100, 20))
 }
 
 #[cfg(test)]
@@ -212,13 +199,13 @@ mod tests {
     // Test for part1
     #[test]
     fn test_part1() {
-        assert_eq!(count_shortcuts_over(&TEST_INPUT.to_string(), 2, 2), 44);
+        assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 2, 2), 44);
     }
 
     // Test for part2
     #[test]
     fn test_part2() {
-        assert_eq!(count_shortcuts_over(&TEST_INPUT.to_string(), 50, 20), 285);
+        assert_eq!(count_around_kernel(&TEST_INPUT.to_string(), 50, 20), 285);
     }
     
     
