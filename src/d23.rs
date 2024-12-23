@@ -1,21 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
-type Link = (String, String);
-
-fn parse_input(input: &String) -> Vec<Link> {
-    input.lines().map(|l| {
-        let (l,r) = l.split_once('-').unwrap();
-        (l.to_string(), r.to_string())
-
-    }).collect()
+fn parse_input(input: &String) -> Vec<(&str, &str)> {
+    input.lines().map(|l| l.split_once('-').unwrap()).collect()
 }
 
-fn create_graph(links: &Vec<Link>) -> HashMap<String, HashSet<String>> {
+fn create_graph<'a>(links: &'a Vec<(&'a str, &'a str)>) -> HashMap<&'a str, HashSet<&'a str>> {
     let mut graph = HashMap::new();
 
-    for (l, r) in links {
-        graph.entry(l.clone()).or_insert(HashSet::new()).insert(r.clone());
-        graph.entry(r.clone()).or_insert(HashSet::new()).insert(l.clone());
+    for &(l, r) in links {
+        graph.entry(l).or_insert(HashSet::new()).insert(r);
+        graph.entry(r).or_insert(HashSet::new()).insert(l);
     }
 
     graph
@@ -60,12 +54,12 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
  * 
  * A clique is a subset of vertices of an undirected graph such that every two distinct vertices in the clique are adjacent.
  */
-fn bron_kerbosch(
-    r: HashSet<String>,
-    p: &mut HashSet<String>,
-    x: &mut HashSet<String>,
-    graph: &HashMap<String, HashSet<String>>,
-    cliques: &mut Vec<HashSet<String>>
+fn bron_kerbosch<'a>(
+    r: HashSet<&'a str>,
+    p: &mut HashSet<&'a str>,
+    x: &mut HashSet<&'a str>,
+    graph: &HashMap<&'a str, HashSet<&'a str>>,
+    cliques: &mut Vec<HashSet<&'a str>>
 ) {
     if p.is_empty() && x.is_empty() {
         cliques.push(r);
@@ -75,17 +69,17 @@ fn bron_kerbosch(
     // chose a pivot vertex
     let pivot = p.union(x).next().unwrap();
 
-    let subp: HashSet<String> = p.difference(graph.get(pivot).unwrap()).cloned().collect();
+    let subp: HashSet<&str> = p.difference(graph.get(pivot).unwrap()).cloned().collect();
 
     for v in subp {
         let mut nr = r.clone();
-        nr.insert(v.clone());
-        let mut np: HashSet<String> = p.intersection(graph.get(&v).unwrap()).cloned().collect();
-        let mut nx: HashSet<String> = x.intersection(graph.get(&v).unwrap()).cloned().collect();
+        nr.insert(v);
+        let mut np: HashSet<&str> = p.intersection(graph.get(v).unwrap()).cloned().collect();
+        let mut nx: HashSet<&str> = x.intersection(graph.get(v).unwrap()).cloned().collect();
         bron_kerbosch(nr, &mut np, &mut nx, &graph, cliques);
 
         // move v from p to x
-        p.remove(&v);
+        p.remove(v);
         x.insert(v);
     }
 }
@@ -94,13 +88,13 @@ pub fn part2(input: &String) -> Box<dyn ToString> {
     let links = parse_input(input);
     let graph = create_graph(&links);
 
-    let mut p: HashSet<String> = graph.keys().cloned().collect();
+    let mut p: HashSet<&str> = graph.keys().cloned().collect();
     let mut cliques = Vec::new();
 
     bron_kerbosch(HashSet::new(), &mut p, &mut HashSet::new(), &graph, &mut cliques);
 
     // get largest clique
-    let mut largest: Vec<String> = cliques
+    let mut largest: Vec<&str> = cliques
         .into_iter()
         .max_by_key(|c| c.len())
         .unwrap()
