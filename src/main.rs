@@ -6,7 +6,7 @@ type Part = fn(&String) -> Box<dyn ToString>;
 
 #[macro_use]
 mod days;
-days!(d01, d02, d03, d04, d05, d06, d07, d08, d09, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23);
+days!(d01, d02, d03, d04, d05, d06, d07, d08, d09, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, d20, d21, d22, d23, d24);
 
 #[derive(Clone)]
 struct Day {
@@ -21,8 +21,33 @@ impl Display for Day {
     }
 }
 
+fn run_day(day: &Day) {
+    if let Ok(input) = fs::read_to_string(format!("inputs/d{:0>2}.txt", day.num)) {
+        println!("Running {}...\n", day);
+        let start = Instant::now();
+        let result = (day.part1)(&input);
+        let duration = start.elapsed();
+        println!("» Part 1: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
+    
+        let start = Instant::now();
+        let result = (day.part2)(&input);
+        let duration = start.elapsed();
+        println!("» Part 2: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
+        println!();
+    } else {
+        println!("{}", "Could not read input file".red());
+    }
+}
 
 fn main() {
+
+    // if there is a command line argument, run that day directly and exit
+    if let Some(day) = std::env::args().nth(1) {
+        let day = day.parse::<usize>().unwrap();
+        let day = DAYS.iter().find(|d| d.num == day).unwrap();
+        run_day(day);
+        return;
+    }
 
     loop {
         let day = inquire::Select::new("Choose the day to run", DAYS.clone()).prompt();
@@ -31,21 +56,6 @@ fn main() {
             break;
         }
         let day = day.unwrap();
-        
-        if let Ok(input) = fs::read_to_string(format!("inputs/d{:0>2}.txt", day.num)) {
-            println!("Running {}...\n", day);
-            let start = Instant::now();
-            let result = (day.part1)(&input);
-            let duration = start.elapsed();
-            println!("» Part 1: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
-        
-            let start = Instant::now();
-            let result = (day.part2)(&input);
-            let duration = start.elapsed();
-            println!("» Part 2: {} {}\n", result.to_string().green(), format!("(took {:?})", duration).dimmed());
-            println!();
-        } else {
-            println!("{}", "Could not read input file".red());
-        }
+        run_day(&day);
     }
 }

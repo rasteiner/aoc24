@@ -191,7 +191,7 @@ impl Robot {
                     if let Some(Button::Empty) = self.pad.get((self.y as isize + dy_) as usize).and_then(|row| row.get((self.x as isize + dx_) as usize)) {
                         return false;
                     }
-                    (dx != 0 && dx_ == dx || dy != 0 && dy_ == dy)
+                    dx != 0 && dx_ == dx || dy != 0 && dy_ == dy
                 }).expect(format!("No direction found for movement {},{}", dx,dy).as_str());
                 
                 let (dx, dy) = dir.to_dir();
