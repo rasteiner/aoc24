@@ -6,7 +6,10 @@ enum Pos {
     Wall,
     Box,
     Empty,
+    LeftBox,
+    RightBox,
 }
+
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Instruction {
@@ -28,18 +31,6 @@ impl Robot {
     }
 
     fn try_move(&mut self, grid: &mut Grid, instruction: Instruction) -> Result<(),String> {
-
-
-        fn try_get(x: i64, y: i64, grid: &Grid) -> Result<Pos,String> {
-            if x < 0 || y < 0 {
-                return Err(String::from("Out of bounds"));
-            }
-            if y as usize >= grid.len() || x as usize >= grid[y as usize].len() {
-                return Err(String::from("Out of bounds"));
-            }
-            Ok(grid[y as usize][x as usize])
-        }
-
         let (dx, dy) = instruction.to_direction();
         let mut x = self.x + dx;
         let mut y = self.y + dy;
@@ -138,6 +129,17 @@ impl TryFrom<char> for Instruction {
     }
 }
 
+fn try_get(x: i64, y: i64, grid: &Grid) -> Result<Pos,String> {
+    if x < 0 || y < 0 {
+        return Err(String::from("Out of bounds"));
+    }
+    if y as usize >= grid.len() || x as usize >= grid[y as usize].len() {
+        return Err(String::from("Out of bounds"));
+    }
+    Ok(grid[y as usize][x as usize])
+}
+
+
 fn parse(input: &String) -> (Grid, Instructions, Robot) {
     // split once by double newline
     let (grid_str, instructions_str) = input
@@ -182,6 +184,8 @@ fn print_map(grid: &Grid, robot: &Robot) {
                     Pos::Wall => print!("#"),
                     Pos::Box => print!("O"),
                     Pos::Empty => print!("."),
+                    Pos::LeftBox => print!("["),
+                    Pos::RightBox => print!("]"),
                 }
             }
         }
@@ -209,7 +213,7 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
     #[cfg(not(test))]
     {
         for i in instructions {
-            let _ = robot.try_move(&mut grid, i).unwrap();
+            let _ = robot.try_move(&mut grid, i);
         }
     }
 
@@ -227,8 +231,92 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
     )
 }
 
+fn scale_up(grid: Vec<Vec<Pos>>) -> Vec<Vec<Pos>> {
+    let mut new_grid = Vec::new();
+    for row in grid {
+        let mut new_row = Vec::new();
+        for p in row {
+            if p == Pos::Box {
+                new_row.push(Pos::LeftBox);
+                new_row.push(Pos::RightBox);
+            } else {
+                new_row.push(p);
+                new_row.push(p);
+            }
+        }
+        new_grid.push(new_row);
+    }
+    new_grid
+}
+
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    Box::new(0)
+    let (grid, instructions, mut robot) = parse(input);
+    let mut grid = scale_up(grid);
+    robot.x *= 2;
+
+
+    fn try_move(grid: &Vec<Vec<Pos>>, (x,y): (i64,i64), instruction: &Instruction) -> Result<Vec<Vec<Pos>>,String> {
+        let from = try_get(x, y, &grid)?;
+        let (dx, dy) = instruction.to_direction();
+        let tox = x + dx;
+        let toy = y + dy;
+
+        let to = try_get(tox, toy, &grid)?;
+
+        match to {
+            Pos::Wall => return Err("Cannot move into wall".to_string()),
+            Pos::Empty => {
+                let mut new_grid = grid.clone();
+                new_grid[y as usize][x as usize] = Pos::Empty;
+                new_grid[toy as usize][tox as usize] = from;
+                Ok(new_grid)
+            },
+            Pos::LeftBox => {
+                let mut new_grid = try_move(grid, (tox, toy), instruction)?;
+                new_grid[y as usize][x as usize] = Pos::Empty;
+                new_grid[toy as usize][tox as usize] = from;
+
+                if *instruction == Instruction::Up || *instruction == Instruction::Down {                    
+                    new_grid = try_move(&new_grid, (x + 1,toy), instruction)?;
+                }
+                Ok(new_grid)
+            },
+            Pos::RightBox => {                
+                let mut new_grid = try_move(grid, (tox, toy), instruction)?;
+                new_grid[y as usize][x as usize] = Pos::Empty;
+                new_grid[toy as usize][tox as usize] = from;
+
+                if *instruction == Instruction::Up || *instruction == Instruction::Down {
+                    new_grid = try_move(&new_grid, (x - 1,toy), instruction)?;
+                }
+
+                Ok(new_grid)
+            },
+            _ => panic!("Unsupported position type for part 2")
+        }
+    }
+
+    for instr in instructions {
+        if let Ok(new_grid) = try_move(&grid, (robot.x, robot.y), &instr) {
+            robot.x += instr.to_direction().0;
+            robot.y += instr.to_direction().1;
+            grid = new_grid;
+        }
+    }
+
+    
+    let mut gps = 0;
+    for (y, row) in grid.into_iter().enumerate() {
+        for (x, p) in row.into_iter().enumerate() {
+            if p == Pos::LeftBox {
+                gps += 100 * y + x;
+            }
+        }
+    }
+
+    Box::new(
+        i64::try_from(gps).unwrap()
+    )
 }
 
 #[cfg(test)]
@@ -248,6 +336,7 @@ mod tests {
 
         <^^>>>vv<v>>v<<"
     };
+
     const TEST_RESULT_SMALL: i64 = 2028;
     const TEST_INPUT: &str = indoc! {"
         ##########
