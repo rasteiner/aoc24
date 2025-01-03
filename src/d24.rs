@@ -1,16 +1,17 @@
-use std::{collections::{HashMap, HashSet, VecDeque}, str::FromStr};
+use std::{collections::{HashMap, VecDeque}, str::FromStr};
 
+use clipboard::ClipboardProvider;
 use itertools::Itertools;
-use rayon::vec;
+use rayon::str;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 enum Operation {
     AND,
     OR,
     XOR,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 struct Gate<'a> {
     i1: &'a str,
     op: Operation,
@@ -28,6 +29,16 @@ impl FromStr for Operation {
             "XOR" => Ok(Operation::XOR),
             _ => Err(()),
         }
+    }
+}
+
+impl ToString for Operation {
+    fn to_string(&self) -> String {
+        match self {
+            Operation::AND => "AND",
+            Operation::OR => "OR",
+            Operation::XOR => "XOR"
+        }.to_string()
     }
 }
 
@@ -105,293 +116,133 @@ pub fn part1(input: &String) -> Box<dyn ToString> {
 }
 
 
-fn run<'a>(x_values: Vec<u8>, y_values: Vec<u8>, connections: &'a Vec<Gate>, switches: &HashMap<&'a str, &'a str>) -> Result<u64, ()> {
-    let mut queue = VecDeque::new();
-    let mut values = HashMap::new();
-
-    for gate in connections.iter() {
-        queue.push_back(gate);
-    }
-
-    let mut found_new_value_for = 0usize;
-    
-    while let Some(gate) = queue.pop_front() {
-        
-
-        let i1 = match gate.i1.chars().nth(0) {
-            Some('x') => x_values.get(gate.i1[1..].parse::<usize>().unwrap()),
-            Some('y') => y_values.get(gate.i1[1..].parse::<usize>().unwrap()),
-            _ => values.get(gate.i1)
-        };
-        let i2 = match gate.i2.chars().nth(0) {
-            Some('x') => x_values.get(gate.i2[1..].parse::<usize>().unwrap()),
-            Some('y') => y_values.get(gate.i2[1..].parse::<usize>().unwrap()),
-            _ => values.get(gate.i2)
-        };
-
-        if i1.is_some() && i2.is_some() {
-            let v1 = *i1.unwrap();
-            let v2 = *i2.unwrap();
-            let result = match gate.op {
-                Operation::AND => v1 & v2,
-                Operation::OR => v1 | v2,
-                Operation::XOR => v1 ^ v2,
-            };
-
-            let &out = switches.get(gate.out).unwrap_or(&gate.out);
-
-            values.insert(out, result);
-            found_new_value_for = 0;
-
-        } else {
-            if values.contains_key(&gate.out) {
-                return Err(())
-            }
-
-            if found_new_value_for > connections.len() * 2 {
-                return Err(());
-            }
-
-            found_new_value_for += 1;
-
-            queue.push_back(gate);
-        }
-    }
-
-    Ok(make_num("z", &values))
-}
-
-
-
-/**
- * returns true when an error is found
- */
-fn check_wires<'a>(digit: u8, max: u8, connections: &'a Vec<Gate>, switches: &HashMap<&str, &str>) -> Result<(HashSet<String>, usize),()> {
-    let mut problemset = HashSet::new();
-    let mut error_count = 0;
-
-
-    let setup = |x: usize, y: usize| -> (Vec<u8>, Vec<u8>) {
-        let mut x_values = vec![0u8; max as usize];
-        let mut y_values = vec![0u8; max as usize];
-    
-        for i in 0..max {
-            let n = (1 as usize) << i;
-            if x & (n) != 0 {
-                x_values[i as usize] = 1;
-            }
-
-            if y & n != 0 {
-                y_values[i as usize] = 1;
-            }
-        }
-
-        (x_values, y_values)
-    };
-
-    // case 1: 0 + 0 = 0
-    let (x_values, y_values) = setup(0, 0);
-    let result = run(x_values.clone(), y_values.clone(), connections, switches)?;
-    if result != 0 {
-        // add the problmatic z gates (in this case all those that are 1) to the problemset
-        for i in 0..max {
-            if result & (1 << i) != 0 {
-                problemset.insert(i);
-                error_count += 1;
-            }
-        }
-    }
-
-    // case 2: 1 << digit + 0 = 1 << digit
-    let (x_values, y_values) = setup(1 << digit, 0);
-    let result = run(x_values.clone(), y_values.clone(), connections, switches)?;
-    if result != 1 << digit {
-        
-        let should_be_1: u64 = 1 << digit;
-        for i in 0..max {
-            if result & (1 << i) != should_be_1 & (1 << i) {
-                problemset.insert(i);
-                error_count += 1;
-            }
-        }
-    }
-
-    // case 3: 0 + 1 << digit = 1 << digit
-    let (x_values, y_values) = setup(0, 1 << digit);
-    let result = run(x_values.clone(), y_values.clone(), connections, switches)?;
-
-    if result != 1 << digit {
-        let should_be_1: u64 = 1 << digit;
-        for i in 0..max {
-            if result & (1 << i) != should_be_1 & (1 << i) {
-                problemset.insert(i);
-                error_count += 1;
-            }
-        }
-    }
-
-    // case 4: 1 << digit + 1 << digit = 1 << (digit + 1)
-    let (x_values, y_values) = setup(1 << digit, 1 << digit);
-    let result = run(x_values.clone(), y_values.clone(), connections, switches)?;
-    if result != 1 << (digit + 1) {
-        let should_be_1: u64 = 1 << digit + 1;
-        for i in 0..max {
-            if result & (1 << i) != should_be_1 & (1 << i) {
-                problemset.insert(i);
-                error_count += 1;
-            }
-        }
-    }
-
-    // return all gates getween xi and zi, and also all the gates between yi and zi
-    let mut result = HashSet::new();
-    for z in problemset.iter() {
-        result = result.union(&wires_from_to(format!("x{:02}", digit), format!("z{:02}", z), connections).into_iter().collect()).cloned().collect();
-        result = result.union(&wires_from_to(format!("y{:02}", digit), format!("z{:02}", z), connections).into_iter().collect()).cloned().collect();
-    }
-
-    // remove all gates that begin with x or y from the problemset
-    result = result.into_iter().filter(|gate| !gate.starts_with("x") && !gate.starts_with("y")).collect();
-    Ok((result, error_count))
-
-
-}
-
-// finds the shortest path from one gate to another
-fn wires_from_to(from: String, to: String, connections: &Vec<Gate>) -> Vec<String> {
-
-    let mut adjacency: HashMap<String, Vec<String>> = HashMap::new();
-    for gate in connections {
-        adjacency.entry(gate.i1.to_owned()).or_default().push(gate.out.to_owned());
-        adjacency.entry(gate.i2.to_owned()).or_default().push(gate.out.to_owned());
-    }
-
-    let mut queue = VecDeque::new();
-    let mut visited = HashMap::new();
-    queue.push_back(from.clone());
-    visited.insert(from.clone(), None);
-
-    while let Some(current) = queue.pop_front() {
-        if current == to {
-            let mut path = Vec::new();
-            let mut node = Some(current);
-            while let Some(n) = node {
-                path.push(n.clone());
-                node = visited[&n].clone();
-            }
-            path.reverse();
-            return path;
-        }
-        if let Some(nexts) = adjacency.get(&current) {
-            for n in nexts {
-                if !visited.contains_key(n) {
-                    visited.insert(n.clone(), Some(current.clone()));
-                    queue.push_back(n.clone());
-                }
-            }
-        }
-    }
-
-    Vec::new()
-}
-
-fn validate<'a>(switches: &Vec<(&str, &str)>, connections: &Vec<Gate>, digits: u8) -> Result<(HashSet<String>, usize), ()> {
-    let mut problemset = HashSet::new();
-    let mut error_count = 0;
-
-    let mut switchmap = HashMap::new();
-    for switch in switches {
-        switchmap.insert(switch.0, switch.1);
-        switchmap.insert(switch.1, switch.0);
-    }
-
-    for i in 0..digits {
-        // check if there's a path from xi to zi and from yi to zi
-        if wires_from_to(format!("x{:02}", i), format!("z{:02}", i), connections).len() == 0 {
-            return Err(());
-        }
-        if wires_from_to(format!("y{:02}", i), format!("z{:02}", i), connections).len() == 0 {
-            return Err(());
-        }
-
-
-        let (newset, errs) = check_wires(i, digits, &connections, &switchmap)?;
-        if newset.len() > 0 {
-            problemset = problemset.union(&newset).cloned().collect();
-            error_count += errs;
-        }
-    }
-
-    return Ok((problemset, error_count));
-}
-
 pub fn part2(input: &String) -> Box<dyn ToString> {
-    let (values, connections) = parse(input);
-    let mut digits = 0;
+    let (_, connections) = parse(input);
+    
+    let mut nodes = Vec::new();
+    let mut gates = Vec::new();
+    let mut edges = Vec::new();
+    
+    #[derive(Debug, Hash, PartialEq, Eq)]
+    struct Node {
+        id: String, 
+        label: String, 
+        shape: &'static str,
+    }
 
-    // reset every value to 0
-    values.iter().for_each(|(k, _)| {
-        match k.chars().nth(0) {
-            Some('x') => digits += 1,
-            _ => (),
+    #[derive(Debug, Hash, PartialEq, Eq)]
+    struct Edge {
+        label: String, 
+        from: String,
+        to: String,
+        to_type: String,
+    }
+    let switches = [
+        ("z05", "gdd"),
+        ("z09", "cwt"),
+        ("css", "jmv"),
+        ("z37", "pqt"),
+    ];
+
+    // apply switches
+    let connections = connections.iter().map(|conn| {
+        let mut conn = conn.clone();
+        for &(a, b) in switches.iter() {
+            if conn.out == a {
+                conn.out = b;
+            } else if conn.out == b {
+                conn.out = a;
+            }
         }
+        conn
+    }).collect::<Vec<_>>();
+    
+    // add inputs
+    for i in 0..=44 {
+        for c in ['x', 'y'] {
+            nodes.push(Node {
+                id: format!{"{}{:02}", c, i},
+                label: format!{"{}{:02}", c, i},
+                shape: "circle"
+            });
+        }
+    }
+
+    for conn in connections.iter() {
+        
+        let id = format!("_{}", conn.out);
+
+        gates.push(Node {
+            id: id.clone(),
+            label: conn.op.to_string(),
+            shape: "rect"
+        });
+        
+        edges.push(Edge {
+            label: conn.i1.to_string(),
+            from: match conn.i1.chars().nth(0).unwrap() {'x' | 'y' => conn.i1.to_string(), _=> format!("_{}", conn.i1)},
+            to: id.clone(),
+            to_type: conn.op.to_string(),
+        });
+        
+        edges.push(Edge {
+            label: conn.i2.to_string(),
+            from: match conn.i1.chars().nth(0).unwrap() {'x' | 'y' => conn.i2.to_string(), _=> format!("_{}", conn.i2)},
+            to: id.clone(),
+            to_type: conn.op.to_string(),
+        });
+
+        if conn.out.chars().nth(0) == Some('z') {
+            edges.push(Edge {
+                label: conn.out.to_string(),
+                from: id.clone(),
+                to: conn.out.to_string(),
+                to_type: "output".to_string(),
+            });
+        }
+    }
+
+    // sort gates by operation
+    gates.sort_by(|a,b| a.label.cmp(&b.label));
+
+    // sort edges by operation
+    edges.sort_by(|a,b| a.to_type.cmp(&b.to_type));
+
+    // add to nodes
+    nodes.extend(gates.into_iter());
+
+    // add outputs
+    for i in 0..=44 {
+        nodes.push(Node {
+            id: format!{"z{:02}", i},
+            label: format!{"z{:02}", i},
+            shape: "circle"
+        });
+    }
+
+    let mut txt = "flowchart LR\n".to_string();
+
+    for node in nodes.iter() {
+        txt.push_str(&format!("\t{}@{{ shape: {}, label: {} }}\n", node.id, node.shape, node.label));
+    }
+    for edge in edges.iter() {
+        txt.push_str(&format!("\t{} --> |{}| {}\n", edge.from, edge.label, edge.to));
+    }
+
+    let mut clip = clipboard::ClipboardContext::new().unwrap();
+    clip.set_contents(txt).unwrap();
+
+    println!("Mermaid flowchart copied to clipboard");
+
+    let mut result = switches.into_iter().fold(vec![], |mut acc, (a,b)| {
+        acc.push(a);
+        acc.push(b);
+        acc
     });
 
-    let (problemset, err_count) = validate(&vec![], &connections, digits).expect("error validating without switches");
-    
-    println!("Bruteforcing Problemset: {:?} which has {} errors", problemset, err_count);
+    result.sort();
 
-    let problemset: Vec<String> = problemset.into_iter().collect();
-    let mut switched = vec![];
-
-    for i in 0..problemset.len() {
-        for j in i+1..problemset.len() {
-            let switch = vec![(problemset[i].as_str(), problemset[j].as_str())];
-            if let Ok((_, errs)) = validate(&switch, &connections, digits) {
-                if errs < err_count {
-                    println!("Switching {} and {} reduced errors from {} to {}", problemset[i], problemset[j], err_count, errs);
-                    switched.push((problemset[i].clone(), problemset[j].clone()));
-                }
-            }
-        }
-        println!("Progress: {}/{}", i, problemset.len());
-    }
-
-    println!("Switched: {:?}", switched);
-
-    let mut lowest_errs = err_count;
-    let mut lowest_switches = vec![];
-
-    // check if a combination of 4 switches can reduce the error count to 0
-    for i in 0..switched.len() {
-        for j in i+1..switched.len() {
-            for k in j+1..switched.len() {
-                for l in k+1..switched.len() {
-
-                    let switches = vec![
-                        (switched[i].0.as_str(), switched[i].1.as_str()),
-                        (switched[j].0.as_str(), switched[j].1.as_str()),
-                        (switched[k].0.as_str(), switched[k].1.as_str()),
-                        (switched[l].0.as_str(), switched[l].1.as_str()),
-                    ];
-                    if let Ok((faulty, errs)) = validate(&switches, &connections, digits) {
-                        if errs == 0 {
-                            println!("Found a combination of switches that reduces errors to 0: {:?}", switches);
-                            return Box::new(switches.iter().map(|(a, b)| format!("{},{}", a, b)).join(","));
-                        } else if errs < lowest_errs {
-                            println!("Found a combination of switches that reduces errors to {}: {:?}, faulty wires: {:?}", errs, switches, faulty);
-                            lowest_errs = errs;
-                            lowest_switches = switches;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    println!("Could not find a combination of switches that reduces errors to 0, but the lowest error count was {}", lowest_errs);
-
-    Box::new(0)
+    Box::new(result.join(","))
 }
 
 #[cfg(test)]
